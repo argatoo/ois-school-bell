@@ -1,0 +1,204 @@
+{
+  "_readme": "Bu fayl maktab qo'ng'iroq jadvalini belgilaydi. 'day_types' - har xil kun turlari uchun vaqt+ovoz ro'yxati. 'week_schedule' - har bir hafta kuni qaysi 'day_type' bo'yicha ishlashini ko'rsatadi. 'date_overrides' - aniq bir sanada boshqa kun turini majburlaydi (masalan bayram oldi, imtihon kuni). Vaqtlar 24-soatlik formatda (HH:MM). 'sound' maydonidagi fayl nomi audios/ papkasida bo'lishi kerak.",
+  "day_types": {
+    "oddiy": [
+      {
+        "time": "08:25",
+        "label": "1-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "09:05",
+        "label": "1-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "09:15",
+        "label": "2-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "09:55",
+        "label": "2-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "10:05",
+        "label": "3-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "10:45",
+        "label": "3-dars tugashi / katta tanaffus",
+        "sound": "tanaffus_katta.mp3"
+      },
+      {
+        "time": "11:05",
+        "label": "4-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "11:45",
+        "label": "4-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "11:55",
+        "label": "5-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "12:35",
+        "label": "5-dars tugashi / tushlik",
+        "sound": "tushlik.mp3"
+      },
+      {
+        "time": "13:15",
+        "label": "6-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "13:55",
+        "label": "6-dars tugashi",
+        "sound": "tanaffus.mp3"
+      }
+    ],
+    "qisqartirilgan": [
+      {
+        "time": "08:25",
+        "label": "1-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "08:55",
+        "label": "1-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "09:05",
+        "label": "2-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "09:35",
+        "label": "2-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "09:45",
+        "label": "3-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "10:15",
+        "label": "3-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "10:25",
+        "label": "4-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "10:55",
+        "label": "4-dars tugashi / darslar yakuni",
+        "sound": "tanaffus.mp3"
+      }
+    ],
+    "imtihon": [
+      {
+        "time": "09:00",
+        "label": "Imtihon boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "11:00",
+        "label": "Imtihon yakuni",
+        "sound": "tanaffus.mp3"
+      }
+    ],
+    "bayram_oldi": [
+      {
+        "time": "08:25",
+        "label": "1-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "08:55",
+        "label": "1-dars tugashi / tanaffus",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "09:05",
+        "label": "2-dars boshlanishi",
+        "sound": "dars_boshlanish.mp3"
+      },
+      {
+        "time": "09:35",
+        "label": "2-dars tugashi / darslar yakuni",
+        "sound": "tanaffus.mp3"
+      },
+      {
+        "time": "09:45",
+        "label": "Bayramona tadbir / madhiya",
+        "sound": "madhiya.mp3"
+      }
+    ],
+    "sinov": [
+      {
+        "time": "17:26",
+        "label": "SINOV signali #1",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:27",
+        "label": "SINOV signali #2",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:28",
+        "label": "SINOV signali #3",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:29",
+        "label": "SINOV signali #4",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:30",
+        "label": "SINOV signali #5",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:31",
+        "label": "SINOV signali #6",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:32",
+        "label": "SINOV signali #7",
+        "sound": "test_beep.wav"
+      },
+      {
+        "time": "17:33",
+        "label": "SINOV signali #8",
+        "sound": "test_beep.wav"
+      }
+    ]
+  },
+  "week_schedule": {
+    "monday": "oddiy",
+    "tuesday": "oddiy",
+    "wednesday": "oddiy",
+    "thursday": "oddiy",
+    "friday": "oddiy",
+    "saturday": "oddiy",
+    "sunday": null
+  },
+  "date_overrides": {
+    "_example": "Masalan pastdagi qatorni o'chirib, o'z sanangizni qo'ysangiz bo'ladi: \"2026-09-25\": \"qisqartirilgan\"",
+    "2099-01-01": "bayram_oldi",
+    "2026-09-22": "bayram_oldi"
+  }
+}

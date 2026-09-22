@@ -1,0 +1,11 @@
+{
+  "name": "bell-web",
+  "version": "1.0.0",
+  "description": "Oxford International School qo'ng'iroq tizimi uchun local web boshqaruv paneli",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "license": "ISC"
+}

@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qo'ng'iroq nazorati</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#eef1f0; --panel:#ffffff; --panel-2:#e4e9e7; --line:#d3dbd8;
+    --text:#16211f; --text-dim:#54655f;
+    --accent:#b8681f; --accent-soft:#f0dcc4;
+    --teal:#1f6f6b; --teal-soft:#d9ece9;
+    --ok:#2f8a52; --crit:#c2455a;
+    --shadow:0 1px 2px rgba(20,30,27,.06),0 8px 24px -12px rgba(20,30,27,.18);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1615; --panel:#16201e; --panel-2:#1c2725; --line:#2a3634;
+      --text:#e8ede9; --text-dim:#8fa39c;
+      --accent:#e3a458; --accent-soft:#3a2f1e;
+      --teal:#4fbdb5; --teal-soft:#17302d;
+      --ok:#5cbf82; --crit:#e37e8e;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -12px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1615; --panel:#16201e; --panel-2:#1c2725; --line:#2a3634;
+    --text:#e8ede9; --text-dim:#8fa39c;
+    --accent:#e3a458; --accent-soft:#3a2f1e;
+    --teal:#4fbdb5; --teal-soft:#17302d;
+    --ok:#5cbf82; --crit:#e37e8e;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -12px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    padding:20px 16px 48px; display:flex; flex-direction:column; gap:18px;
+    max-width:1180px; margin:0 auto; font-variant-numeric:tabular-nums;
+  }
+  .mono{font-family:'IBM Plex Mono','SF Mono',Menlo,monospace}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;gap:12px;align-items:center}
+  .bell-mark{width:42px;height:42px;border-radius:11px;background:linear-gradient(155deg,var(--accent),#8a4c13);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);flex:none}
+  .bell-mark svg{width:22px;height:22px}
+  .brand h1{font-size:17px;margin:0;font-weight:600}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--text-dim)}
+  .clock-block{text-align:right}
+  .clock-block .time{font-size:28px;font-weight:600}
+  .clock-block .date{font-size:12.5px;color:var(--text-dim);margin-top:2px}
+  .live-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ok);margin-top:4px}
+  .live-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:pulse 1.6s ease-in-out infinite}
+  .live-pill.off{color:var(--crit)}
+  .live-pill.off .dot{background:var(--crit);animation:none}
+  .banner{background:var(--teal-soft);border:1px solid color-mix(in srgb, var(--teal) 35%, transparent);border-radius:var(--radius);padding:12px 16px;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+  .banner b{color:var(--teal)}
+  .banner svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--teal)}
+  .banner.err{background:color-mix(in srgb, var(--crit) 15%, var(--panel));border-color:color-mix(in srgb, var(--crit) 40%, transparent)}
+  .banner.err b{color:var(--crit)}
+  .modebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow)}
+  .seg{display:flex;background:var(--panel-2);border-radius:999px;padding:3px;gap:2px}
+  .seg button{border:none;background:transparent;color:var(--text-dim);font:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
+  .seg button.active{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .modebar .simrow{display:flex;align-items:center;gap:10px;flex:1;min-width:240px}
+  .modebar input[type=range]{flex:1;accent-color:var(--accent)}
+  .simtime{font-size:13px;font-weight:600;min-width:52px;text-align:right}
+  .playbtn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;display:flex;gap:6px;align-items:center}
+  .playbtn:hover{border-color:var(--accent)}
+  .playbtn:disabled{opacity:.5;cursor:wait}
+  .playbtn.live{background:var(--crit);border-color:var(--crit);color:#fff}
+  .playbtn.live svg{animation:pulse 1.1s ease-in-out infinite}
+  .hero{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 200px at 85% -20%, var(--accent-soft), transparent 70%);pointer-events:none}
+  .hero .left{position:relative;z-index:1}
+  .eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:600}
+  .hero .label{font-size:20px;font-weight:600;margin:6px 0 2px}
+  .hero .sub{font-size:13px;color:var(--text-dim)}
+  .countdown{position:relative;z-index:1;text-align:right}
+  .countdown .num{font-size:44px;font-weight:700;line-height:1}
+  .countdown .cap{font-size:12px;color:var(--text-dim);margin-top:4px}
+  .pulse{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .daytype-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px;margin-top:10px}
+  .daytype-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .daytype-badge.off{background:var(--panel-2);color:var(--text-dim)}
+  .daytype-badge.off .dot{background:var(--text-dim)}
+  .grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+  .panel h2{font-size:13.5px;font-weight:600;margin:0;display:flex;align-items:center;justify-content:space-between}
+  .panel h2 .count{font-size:11.5px;color:var(--text-dim);font-weight:500}
+  .timeline{display:flex;flex-direction:column;gap:2px;max-height:520px;overflow-y:auto}
+  .tl-row{display:grid;grid-template-columns:56px 20px 1fr auto;align-items:center;gap:10px;padding:9px 6px;border-radius:9px;font-size:13px}
+  .tl-row .t{font-weight:600;color:var(--text-dim)}
+  .tl-row .dot{width:8px;height:8px;border-radius:50%;background:var(--line);justify-self:center}
+  .tl-row .snd{font-size:11px;color:var(--text-dim)}
+  .tl-row.past{opacity:.45}
+  .tl-row.now{background:var(--accent-soft)}
+  .tl-row.now .t,.tl-row.now .dot{color:var(--accent)}
+  .tl-row.now .dot{background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent)}
+  .tl-row.next .dot{background:var(--teal)}
+  .tl-row.next .t{color:var(--teal)}
+  .dt-list{display:flex;flex-direction:column;gap:8px}
+  .dt-btn{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+  .dt-btn b{font-weight:600}
+  .dt-btn span.n{font-size:11.5px;color:var(--text-dim);font-weight:500}
+  .dt-btn.active{border-color:var(--accent);background:var(--accent-soft)}
+  .dt-btn.active b{color:var(--accent)}
+  .dt-btn:hover{border-color:var(--accent)}
+  .dt-btn:disabled{opacity:.5;cursor:wait}
+  .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .week-cell{border:1px solid var(--line);border-radius:9px;padding:8px 4px;text-align:center;font-size:10.5px;display:flex;flex-direction:column;gap:5px;background:var(--panel-2)}
+  .week-cell.today{border-color:var(--accent)}
+  .week-cell .d{font-weight:600;color:var(--text-dim)}
+  .week-cell select{font:inherit;font-size:10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:3px 2px;width:100%}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{background:var(--panel-2);border-radius:10px;padding:10px;text-align:center}
+  .stat .v{font-size:18px;font-weight:700}
+  .stat .k{font-size:10.5px;color:var(--text-dim);margin-top:2px}
+  .log{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+  .log-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px;padding:7px 8px;border-radius:8px;background:var(--panel-2)}
+  .log-row .lt{color:var(--text-dim);font-weight:600;min-width:130px}
+  .log-empty{font-size:12.5px;color:var(--text-dim);padding:14px 6px;text-align:center}
+  footer{text-align:center;font-size:11.5px;color:var(--text-dim);padding-top:6px}
+  footer b{color:var(--text)}
+  footer code{background:var(--panel-2);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="bell-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+    <div>
+      <h1>Oxford International School</h1>
+      <p>Qo'ng'iroq tizimi &mdash; local boshqaruv paneli</p>
+    </div>
+  </div>
+  <div class="clock-block">
+    <div class="time mono" id="hdrTime">--:--:--</div>
+    <div class="date" id="hdrDate">&nbsp;</div>
+    <div class="live-pill" id="connPill"><span class="dot"></span><span id="connText">serverga ulanmoqda...</span></div>
+  </div>
+</header>
+
+<div class="banner" id="banner">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+  <div><b>Bu &mdash; real boshqaruv paneli.</b> Bu yerda qilingan har bir o'zgarish (kun turi, haftalik jadval) to'g'ridan-to'g'ri <span class="mono">bell_system/config/schedule.json</span> fayliga yoziladi &mdash; xuddi <span class="mono">bell_admin.py</span> kabi. Agar <span class="mono">bell_scheduler.py</span> boshqa terminalda ishlab turgan bo'lsa, o'zgarish bir daqiqa ichida unga ham ta'sir qiladi.</div>
+</div>
+
+<div class="modebar">
+  <div class="seg">
+    <button id="modeLive" class="active">Jonli vaqt</button>
+    <button id="modeSim">Vaqtni oldindan ko'rish</button>
+  </div>
+  <div class="simrow" id="simRow" hidden>
+    <input type="range" id="simSlider" min="0" max="1439" value="500">
+    <span class="simtime mono" id="simTimeLabel">--:--</span>
+    <button class="playbtn" id="simPlay">
+      <svg id="playIcon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span id="playLabel">O'ynash</span>
+    </button>
+  </div>
+  <button class="playbtn" id="announceBtn" style="margin-left:auto">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    <span id="announceLabel">Jonli e'lon</span>
+  </button>
+</div>
+
+<div class="hero">
+  <div class="left">
+    <div class="eyebrow" id="heroEyebrow">Keyingi signal</div>
+    <div class="label" id="heroLabel">&mdash;</div>
+    <div class="sub" id="heroSub">&nbsp;</div>
+    <div class="daytype-badge" id="dtBadge"><span class="dot"></span><span id="dtBadgeText">&mdash;</span></div>
+  </div>
+  <div class="countdown">
+    <div class="num mono" id="heroCountdown">--:--</div>
+    <div class="cap">qolgan vaqt</div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Bugungi jadval <span class="count" id="tlCount"></span></h2>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Kun turini o'zgartirish <span class="count">bugungi sanaga</span></h2>
+    <div class="dt-list" id="dtList"></div>
+
+    <h2 style="margin-top:6px">Haftalik jadval</h2>
+    <div class="week-grid" id="weekGrid"></div>
+
+    <h2 style="margin-top:6px">Jadval statistikasi</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Jurnal <span class="count" id="logCount">bell_scheduler.py dan real vaqtda</span></h2>
+  <div class="log" id="logList"></div>
+</div>
+
+<footer>
+  1-bosqich: jadval asosidagi avtomatik zvonok &middot; server: <code>localhost:3000</code> &middot; fayl: <code>bell_system/config/schedule.json</code>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const DAY_TYPE_LABELS = {
+    oddiy:"Oddiy kun", qisqartirilgan:"Qisqartirilgan kun",
+    imtihon:"Imtihon kuni", bayram_oldi:"Bayram oldi kuni", sinov:"Sinov kuni"
+  };
+  const WD_KEYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const WD_UZ = {monday:"Dush",tuesday:"Sesh",wednesday:"Chor",thursday:"Pay",friday:"Jum",saturday:"Shan",sunday:"Yak"};
+  const WD_UZ_FULL = {monday:"Dushanba",tuesday:"Seshanba",wednesday:"Chorshanba",thursday:"Payshanba",friday:"Juma",saturday:"Shanba",sunday:"Yakshanba"};
+  const MONTHS_UZ = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
+
+  let config = null;       // serverdan olingan schedule.json
+  let connected = false;
+  let mode = "live";       // "live" | "sim"
+  let simMinutes = 500;
+  let simPlaying = false;
+  let simTimer = null;
+  let busy = false;        // API so'rovi ketayotganda tugmalarni bloklash
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function minutesToHHMM(m){ return pad(Math.floor(m/60)) + ":" + pad(m%60); }
+  function timeStrToMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+
+  function getMoment(){
+    const d = new Date();
+    const wd = WD_KEYS[(d.getDay()+6)%7];
+    return {
+      weekdayKey: wd,
+      dateStr: d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()),
+      minutes: mode === "live" ? d.getHours()*60 + d.getMinutes() : simMinutes,
+      seconds: mode === "live" ? d.getSeconds() : 0,
+      dateObj: d,
+    };
+  }
+
+  function getDayType(dateStr, weekdayKey){
+    if(!config) return null;
+    const ov = config.date_overrides || {};
+    if(ov[dateStr]) return ov[dateStr];
+    return (config.week_schedule || {})[weekdayKey] || null;
+  }
+
+  async function fetchSchedule(){
+    const r = await fetch("/api/schedule");
+    if(!r.ok) throw new Error("schedule fetch xato: " + r.status);
+    config = await r.json();
+  }
+
+  async function fetchLog(){
+    const r = await fetch("/api/log?limit=60");
+    if(!r.ok) return [];
+    const j = await r.json();
+    return j.rows || [];
+  }
+
+  async function postDayType(date, dayType){
+    const r = await fetch("/api/day-type", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({date, dayType})
+    });
+    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
+    const j = await r.json();
+    config = j.config;
+  }
+
+  async function postWeek(weekday, dayType){
+    const r = await fetch("/api/week", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({weekday, dayType})
+    });
+    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
+    const j = await r.json();
+    config = j.config;
+  }
+
+  function setBanner(msg, isErr){
+    const b = document.getElementById("banner");
+    if(msg === null){ b.style.display = "none"; return; }
+    b.style.display = "flex";
+    b.classList.toggle("err", !!isErr);
+    b.querySelector("div:last-child").innerHTML = msg;
+  }
+
+  // ---------- render ----------
+  function renderClock(){
+    const mo = getMoment();
+    if(mode === "live"){
+      document.getElementById("hdrTime").textContent =
+        `${pad(Math.floor(mo.minutes/60))}:${pad(mo.minutes%60)}:${pad(mo.seconds)}`;
+    } else {
+      document.getElementById("hdrTime").textContent = minutesToHHMM(mo.minutes) + ":00";
+    }
+    document.getElementById("hdrDate").textContent =
+      `${mo.dateObj.getDate()} ${MONTHS_UZ[mo.dateObj.getMonth()]}, ${WD_UZ_FULL[mo.weekdayKey]}`;
+
+    const pill = document.getElementById("connPill");
+    pill.classList.toggle("off", !connected);
+    document.getElementById("connText").textContent = connected ? "server bilan ulangan" : "server bilan aloqa yo'q";
+  }
+
+  function renderMain(){
+    if(!config) return;
+    const mo = getMoment();
+    const dayType = getDayType(mo.dateStr, mo.weekdayKey);
+    const badge = document.getElementById("dtBadge");
+    const badgeText = document.getElementById("dtBadgeText");
+
+    if(!dayType){
+      badge.classList.add("off"); badgeText.textContent = "Bugun signal yo'q";
+    } else {
+      badge.classList.remove("off");
+      badgeText.textContent = DAY_TYPE_LABELS[dayType] || dayType;
+    }
+
+    const events = dayType ? (config.day_types[dayType] || []) : [];
+    const nowMin = mo.minutes;
+
+    const tl = document.getElementById("timeline");
+    tl.innerHTML = "";
+    document.getElementById("tlCount").textContent = events.length ? `${events.length} ta signal` : "";
+    if(!events.length){
+      tl.innerHTML = `<div class="log-empty">Bugun uchun signal jadvali belgilanmagan.</div>`;
+    }
+
+    let nextEvent = null, nowEvent = null;
+    events.forEach(ev=>{
+      const evMin = timeStrToMinutes(ev.time);
+      const row = document.createElement("div");
+      let cls = "tl-row";
+      if(evMin < nowMin) cls += " past";
+      if(evMin === nowMin){ cls += " now"; nowEvent = ev; }
+      row.className = cls;
+      row.innerHTML = `<div class="t mono">${ev.time}</div><div class="dot"></div>
+        <div><div>${ev.label}</div><div class="snd mono">${ev.sound}</div></div><div></div>`;
+      tl.appendChild(row);
+      if(evMin > nowMin && !nextEvent) nextEvent = {...ev, _row:row};
+    });
+    if(nextEvent && nextEvent._row) nextEvent._row.classList.add("next");
+
+    const heroLabel = document.getElementById("heroLabel");
+    const heroSub = document.getElementById("heroSub");
+    const heroCountdown = document.getElementById("heroCountdown");
+    const heroEyebrow = document.getElementById("heroEyebrow");
+
+    if(nowEvent){
+      heroEyebrow.textContent = "Hozir chalinmoqda";
+      heroLabel.textContent = nowEvent.label;
+      heroSub.textContent = nowEvent.time + " · " + nowEvent.sound;
+      heroCountdown.textContent = "♪ ♪ ♪";
+      heroCountdown.classList.add("pulse");
+    } else if(nextEvent){
+      heroEyebrow.textContent = "Keyingi signal";
+      heroLabel.textContent = nextEvent.label;
+      heroSub.textContent = nextEvent.time + " · " + nextEvent.sound;
+      const diff = timeStrToMinutes(nextEvent.time) - nowMin;
+      heroCountdown.textContent = diff <= 0 ? "0:00" : `${Math.floor(diff/60)}:${pad(diff%60)}`;
+      heroCountdown.classList.remove("pulse");
+    } else {
+      heroEyebrow.textContent = dayType ? "Bugungi signallar tugadi" : "Bugun signal yo'q";
+      heroLabel.textContent = dayType ? "Ertangi kungacha kutilmoqda" : "Dam olish kuni";
+      heroSub.textContent = "";
+      heroCountdown.textContent = "—";
+      heroCountdown.classList.remove("pulse");
+    }
+  }
+
+  function renderDtList(){
+    if(!config) return;
+    const mo = getMoment();
+    const todayReal = (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+    })();
+    const current = getDayType(todayReal, WD_KEYS[(new Date().getDay()+6)%7]);
+    const el = document.getElementById("dtList");
+    el.innerHTML = "";
+    Object.keys(config.day_types).forEach(key=>{
+      const btn = document.createElement("button");
+      btn.className = "dt-btn" + (current === key ? " active" : "");
+      btn.disabled = busy;
+      btn.innerHTML = `<b>${DAY_TYPE_LABELS[key] || key}</b><span class="n">${config.day_types[key].length} ta signal</span>`;
+      btn.addEventListener("click", async ()=>{
+        busy = true; renderDtList();
+        try{
+          await postDayType(todayReal, key);
+          setBanner(`<b>OK.</b> Bugun (${todayReal}) endi <b>${DAY_TYPE_LABELS[key]||key}</b> bo'yicha ishlaydi. schedule.json yangilandi.`, false);
+        }catch(e){
+          setBanner(`<b>Xato:</b> ${e.message}`, true);
+        }
+        busy = false;
+        renderAll();
+      });
+      el.appendChild(btn);
+    });
+  }
+
+  function renderWeekGrid(){
+    if(!config) return;
+    const todayWd = WD_KEYS[(new Date().getDay()+6)%7];
+    const el = document.getElementById("weekGrid");
+    el.innerHTML = "";
+    WD_KEYS.forEach(k=>{
+      const cell = document.createElement("div");
+      cell.className = "week-cell" + (k === todayWd ? " today" : "");
+      const cur = (config.week_schedule || {})[k];
+      const opts = ['<option value="">yo\'q</option>'].concat(
+        Object.keys(config.day_types).map(dt=>`<option value="${dt}" ${cur===dt?"selected":""}>${DAY_TYPE_LABELS[dt]||dt}</option>`)
+      );
+      cell.innerHTML = `<div class="d">${WD_UZ[k]}</div><select data-wd="${k}" ${busy?"disabled":""}>${opts.join("")}</select>`;
+      el.appendChild(cell);
+    });
+    el.querySelectorAll("select").forEach(sel=>{
+      sel.addEventListener("change", async ()=>{
+        busy = true;
+        try{
+          await postWeek(sel.dataset.wd, sel.value);
+          setBanner(`<b>OK.</b> ${WD_UZ_FULL[sel.dataset.wd]} kuni yangilandi.`, false);
+        }catch(e){
+          setBanner(`<b>Xato:</b> ${e.message}`, true);
+        }
+        busy = false;
+        renderAll();
+      });
+    });
+  }
+
+  function renderStats(){
+    if(!config) return;
+    const totalSignals = Object.values(config.day_types).reduce((s,arr)=>s+arr.length,0);
+    const el = document.getElementById("stats");
+    el.innerHTML = `
+      <div class="stat"><div class="v">${Object.keys(config.day_types).length}</div><div class="k">kun turi</div></div>
+      <div class="stat"><div class="v">${totalSignals}</div><div class="k">jami signal</div></div>
+      <div class="stat"><div class="v">${Object.keys(config.date_overrides||{}).filter(k=>!k.startsWith("_")).length}</div><div class="k">maxsus sana</div></div>
+    `;
+  }
+
+  function renderLog(rows){
+    const el = document.getElementById("logList");
+    if(!rows || !rows.length){
+      el.innerHTML = `<div class="log-empty">Hali hech narsa qayd etilmagan. bell_scheduler.py ishga tushib, birinchi signal chalinganda shu yerda ko'rinadi.</div>`;
+      return;
+    }
+    el.innerHTML = rows.map(r=>
+      `<div class="log-row"><span class="lt mono">${r.vaqt}</span><span>${r.xabar}</span></div>`
+    ).join("");
+  }
+
+  function renderAll(){
+    renderClock();
+    renderMain();
+    renderDtList();
+    renderWeekGrid();
+    renderStats();
+  }
+
+  // ---------- jonli e'lon (mikrofon -> speaker) ----------
+  const announceBtn = document.getElementById("announceBtn");
+  const announceLabel = document.getElementById("announceLabel");
+  let announceRunning = false;
+  let announceBusy = false;
+
+  async function fetchAnnounceStatus(){
+    const r = await fetch("/api/announce/status");
+    if(!r.ok) throw new Error("holat so'rovi xato: " + r.status);
+    return r.json();
+  }
+
+  function renderAnnounceBtn(){
+    announceBtn.disabled = announceBusy;
+    announceBtn.classList.toggle("live", announceRunning);
+    announceLabel.textContent = announceRunning ? "Jonli e'lon ketmoqda... (to'xtatish)" : "Jonli e'lon";
+  }
+
+  async function pollAnnounceStatus(){
+    try{
+      const st = await fetchAnnounceStatus();
+      announceRunning = !!st.running;
+      if(st.error) setBanner(`<b>Jonli e'lon xatosi:</b> ${st.error}`, true);
+      if(!announceBusy) renderAnnounceBtn();
+    }catch(e){ /* jim */ }
+  }
+
+  announceBtn.addEventListener("click", async ()=>{
+    announceBusy = true; renderAnnounceBtn();
+    try{
+      const st = announceRunning
+        ? await (await fetch("/api/announce/stop", {method:"POST"})).json()
+        : await (await fetch("/api/announce/start", {method:"POST"})).json();
+      announceRunning = !!st.running;
+      if(st.error) setBanner(`<b>Jonli e'lon xatosi:</b> ${st.error}`, true);
+      else setBanner(announceRunning
+        ? "<b>Jonli e'lon boshlandi.</b> Mikrofoningizga gapiring - ovoz shu kompyuterga ulangan speakerlardan eshitiladi."
+        : "<b>Jonli e'lon to'xtatildi.</b>", false);
+    }catch(e){
+      setBanner(`<b>Xato:</b> ${e.message}`, true);
+    }
+    announceBusy = false; renderAnnounceBtn();
+  });
+
+  setInterval(pollAnnounceStatus, 3000);
+
+  // ---------- mode controls ----------
+  const modeLive = document.getElementById("modeLive");
+  const modeSim = document.getElementById("modeSim");
+  const simRow = document.getElementById("simRow");
+  const simSlider = document.getElementById("simSlider");
+  const simTimeLabel = document.getElementById("simTimeLabel");
+  const simPlay = document.getElementById("simPlay");
+  const playIcon = document.getElementById("playIcon");
+  const playLabel = document.getElementById("playLabel");
+
+  modeLive.addEventListener("click", ()=>{
+    mode = "live"; modeLive.classList.add("active"); modeSim.classList.remove("active");
+    simRow.hidden = true; stopSimPlay(); renderAll();
+  });
+  modeSim.addEventListener("click", ()=>{
+    mode = "sim"; modeSim.classList.add("active"); modeLive.classList.remove("active");
+    simRow.hidden = false;
+    simMinutes = getMoment().minutes;
+    simSlider.value = simMinutes;
+    simTimeLabel.textContent = minutesToHHMM(simMinutes);
+    renderAll();
+  });
+  simSlider.addEventListener("input", ()=>{
+    simMinutes = Number(simSlider.value);
+    simTimeLabel.textContent = minutesToHHMM(simMinutes);
+    renderMain();
+  });
+  function stopSimPlay(){
+    simPlaying = false;
+    if(simTimer){ clearInterval(simTimer); simTimer = null; }
+    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    playLabel.textContent = "O'ynash";
+  }
+  simPlay.addEventListener("click", ()=>{
+    if(simPlaying){ stopSimPlay(); return; }
+    simPlaying = true;
+    playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
+    playLabel.textContent = "To'xtatish";
+    simTimer = setInterval(()=>{
+      simMinutes = (simMinutes + 1) % 1440;
+      simSlider.value = simMinutes;
+      simTimeLabel.textContent = minutesToHHMM(simMinutes);
+      renderMain();
+    }, 120);
+  });
+
+  // ---------- polling ----------
+  async function pollSchedule(){
+    try{ await fetchSchedule(); connected = true; if(!busy){ renderDtList(); renderWeekGrid(); renderStats(); renderMain(); } }
+    catch(e){ connected = false; }
+    renderClock();
+  }
+  async function pollLog(){
+    try{ const rows = await fetchLog(); renderLog(rows); }
+    catch(e){ /* jim */ }
+  }
+
+  setInterval(()=>{ if(mode === "live") renderMain(); renderClock(); }, 1000);
+  setInterval(pollSchedule, 4000);
+  setInterval(pollLog, 3000);
+
+  (async function init(){
+    await pollSchedule();
+    await pollLog();
+    await pollAnnounceStatus();
+    renderAll();
+  })();
+})();
+</script>
+</body>
+</html>

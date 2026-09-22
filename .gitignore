@@ -1,0 +1,4 @@
+bell_system/logs/*.csv
+bell_system.zip
+node_modules/
+__pycache__/

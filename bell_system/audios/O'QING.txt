@@ -1,0 +1,18 @@
+Bu papkaga quyidagi audio fayllarni joylashtiring (mp3 yoki wav format bo'lishi mumkin,
+lekin nomlari config/schedule.json faylidagi "sound" qiymatlariga ANIQ mos kelishi kerak):
+
+  - dars_boshlanish.mp3     (dars boshlanish signali - qisqa jiringlash)
+  - tanaffus.mp3            (oddiy tanaffus signali)
+  - tanaffus_katta.mp3      (katta tanaffus uchun, agar boshqacha ohang xohlasangiz)
+  - tushlik.mp3             (tushlik vaqti signali - uzunroq, musiqa bo'lishi mumkin)
+  - madhiya.mp3             (bayramona/ertalabki madhiya)
+
+Agar hozircha alohida fayllar bo'lmasa, bittasini nusxalab qolganlariga
+shu nom bilan saqlab qo'ysangiz ham bo'ladi - keyin xohlagan vaqtingizda
+almashtirasiz. Fayl nomi mos kelmasa, dastur logs/bell_log.csv fayliga
+"ovoz fayli topilmadi" deb yozadi va signalni o'tkazib yuboradi (dastur
+o'zi to'xtab qolmaydi).
+
+Yangi signal turi qo'shmoqchi bo'lsangiz (masalan boshqa ohang), avval
+shu yerga mp3 faylni qo'yib, keyin config/schedule.json faylida
+"sound" qatoriga aynan shu fayl nomini yozing.
