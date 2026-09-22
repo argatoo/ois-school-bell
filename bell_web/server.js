@@ -26,7 +26,18 @@ const BELL_SYSTEM_DIR = path.join(__dirname, "..", "bell_system");
 const SCHEDULE_PATH = path.join(BELL_SYSTEM_DIR, "config", "schedule.json");
 const LOG_PATH = path.join(BELL_SYSTEM_DIR, "logs", "bell_log.csv");
 const LIVE_ANNOUNCE_SCRIPT = path.join(BELL_SYSTEM_DIR, "live_announce.py");
+const AUDIO_DIR = path.join(BELL_SYSTEM_DIR, "audios");
 const PUBLIC_DIR = path.join(__dirname, "public");
+
+const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function listAudioFiles() {
+  try {
+    return fs.readdirSync(AUDIO_DIR).filter((f) => /\.(mp3|wav)$/i.test(f)).sort();
+  } catch {
+    return [];
+  }
+}
 
 // ---------- Jonli e'lon (mikrofon -> speaker) jarayonini boshqarish ----------
 let announceProc = null;
@@ -135,7 +146,27 @@ const MIME = {
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
 };
+
+function serveAudio(req, res, pathname) {
+  const name = decodeURIComponent(pathname.slice("/audios/".length));
+  const filePath = path.join(AUDIO_DIR, name);
+  if (!filePath.startsWith(AUDIO_DIR) || name.includes("..")) {
+    res.writeHead(403); res.end("Taqiqlangan"); return;
+  }
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Topilmadi: " + name);
+      return;
+    }
+    const ext = path.extname(filePath);
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    res.end(content);
+  });
+}
 
 function serveStatic(req, res, pathname) {
   let filePath = pathname === "/" ? "/index.html" : pathname;
@@ -190,6 +221,46 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, config });
     }
 
+    if (pathname === "/api/audios" && req.method === "GET") {
+      return sendJson(res, 200, { files: listAudioFiles() });
+    }
+
+    if (pathname === "/api/signal/add" && req.method === "POST") {
+      const body = await readBody(req);
+      const { dayType, time, label, sound } = body;
+      const config = readSchedule();
+      if (!config.day_types[dayType]) {
+        return sendJson(res, 400, { error: `Noma'lum kun turi: ${dayType}` });
+      }
+      if (!TIME_RE.test(time || "")) {
+        return sendJson(res, 400, { error: "Vaqt HH:MM formatida bo'lishi kerak (masalan 08:25)" });
+      }
+      if (!label || !label.trim()) {
+        return sendJson(res, 400, { error: "'label' (nom) maydoni kerak" });
+      }
+      if (!sound || !sound.trim()) {
+        return sendJson(res, 400, { error: "'sound' (ovoz fayli) maydoni kerak" });
+      }
+      config.day_types[dayType].push({ time, label: label.trim(), sound: sound.trim() });
+      config.day_types[dayType].sort((a, b) => a.time.localeCompare(b.time));
+      writeSchedule(config);
+      return sendJson(res, 200, { ok: true, config });
+    }
+
+    if (pathname === "/api/signal/remove" && req.method === "POST") {
+      const body = await readBody(req);
+      const { dayType, index } = body;
+      const config = readSchedule();
+      const list = config.day_types[dayType];
+      if (!list) return sendJson(res, 400, { error: `Noma'lum kun turi: ${dayType}` });
+      if (!Number.isInteger(index) || index < 0 || index >= list.length) {
+        return sendJson(res, 400, { error: "Noto'g'ri signal indeksi" });
+      }
+      list.splice(index, 1);
+      writeSchedule(config);
+      return sendJson(res, 200, { ok: true, config });
+    }
+
     if (pathname === "/api/week" && req.method === "POST") {
       const body = await readBody(req);
       const { weekday, dayType } = body;
@@ -219,6 +290,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/api/")) {
       return sendJson(res, 404, { error: "Noma'lum API yo'li" });
+    }
+
+    // ---------- Audio preview ----------
+    if (pathname.startsWith("/audios/") && req.method === "GET") {
+      return serveAudio(req, res, pathname);
     }
 
     // ---------- Static frontend ----------
