@@ -3,49 +3,44 @@
 """
 bell_admin.py
 Qo'ng'iroq jadvalini boshqarish uchun oddiy buyruq qatori (CLI) vositasi.
-
-Bu - kelajakda quriladigan web panel/Telegram tugmasining o'rnini
-vaqtincha bosib turadi: shu orqali "bugun qisqartirilgan kun" kabi
-o'zgarishlarni kiritish mumkin. bell_scheduler.py ishlab turgan
-bo'lsa ham, bu yerda kiritilgan o'zgarish avtomatik ko'rinadi -
-qayta ishga tushirish shart emas.
+Web paneldagi bilan bir xil config/schedule.json faylini o'zgartiradi.
+bell_scheduler.py ishlab turgan bo'lsa ham, o'zgarish avtomatik ko'rinadi.
 
 Buyruqlar:
-    python bell_admin.py holat
-        - Bugungi kun turi va qolgan signallar ro'yxatini ko'rsatadi
+    python bell_admin.py royxat
+        - Barcha qo'ng'iroqlarni ko'rsatadi
 
-    python bell_admin.py turlar
-        - Mavjud barcha kun turlarini (day_type) ro'yxatlaydi
+    python bell_admin.py qosh <VAQT> <KUNLAR> <OVOZ> [NOM] [--marta N] [--hafta N]
+        - Yangi qo'ng'iroq qo'shadi
+        - VAQT:   HH:MM (masalan 08:25)
+        - KUNLAR: hammasi | ish (dush-juma) | vergul bilan: dush,sesh,chor,pay,jum,shan,yak
+        - OVOZ:   audios/ papkasidagi fayl nomi
+        - --marta N: ovoz necha marta ketma-ket chalinadi (standart 1)
+        - --hafta N: necha hafta takrorlanadi (berilmasa doimiy)
+        - Misol: python bell_admin.py qosh 08:25 ish dars.mp3 "1-dars" --marta 2 --hafta 4
 
-    python bell_admin.py belgila <SANA> <KUN_TURI>
-        - Ma'lum bir sanaga kun turini belgilaydi (date_override sifatida)
-        - SANA formati: YYYY-MM-DD (masalan 2026-09-25)
-        - Misol: python bell_admin.py belgila 2026-09-25 qisqartirilgan
-
-    python bell_admin.py bekor <SANA>
-        - Shu sanaga qo'yilgan override'ni bekor qiladi (oddiy haftalik
-          jadvalga qaytaradi)
-
-    python bell_admin.py hafta <HAFTA_KUNI> <KUN_TURI>
-        - Doimiy haftalik jadvalni o'zgartiradi
-        - HAFTA_KUNI: monday, tuesday, wednesday, thursday, friday,
-          saturday, sunday
-        - Misol: python bell_admin.py hafta sunday oddiy
+    python bell_admin.py ochir <ID>
+        - ID bo'yicha qo'ng'iroqni o'chiradi (ID 'royxat' da ko'rinadi)
 """
 
+import argparse
 import json
 import os
+import re
+import secrets
 import sys
-from datetime import datetime
+from datetime import date
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config", "schedule.json")
 
 WEEKDAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-WEEKDAY_UZ = {
-    "monday": "Dushanba", "tuesday": "Seshanba", "wednesday": "Chorshanba",
-    "thursday": "Payshanba", "friday": "Juma", "saturday": "Shanba", "sunday": "Yakshanba",
+WEEKDAY_SHORT_UZ = ["Dush", "Sesh", "Chor", "Pay", "Jum", "Shan", "Yak"]
+DAY_ALIASES = {
+    "dush": "monday", "sesh": "tuesday", "chor": "wednesday", "pay": "thursday",
+    "jum": "friday", "shan": "saturday", "yak": "sunday",
 }
+TIME_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 
 
 def load_config():
@@ -57,127 +52,108 @@ def save_config(config):
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
         f.write("\n")
-    # bell_scheduler.py fayl o'zgarish vaqtini (mtime) tekshirib turadi,
-    # shuning uchun yozish bilanoq o'zgarish avtomatik qo'llanadi.
 
 
-def cmd_turlar(config):
-    print("Mavjud kun turlari (day_type):")
-    for name, events in config.get("day_types", {}).items():
-        print(f"  - {name}  ({len(events)} ta signal)")
+def parse_days(text):
+    text = text.strip().lower()
+    if text == "hammasi":
+        return list(WEEKDAY_NAMES)
+    if text == "ish":
+        return WEEKDAY_NAMES[:5]
+    days = []
+    for part in text.split(","):
+        part = part.strip()
+        key = DAY_ALIASES.get(part) or DAY_ALIASES.get(part[:3]) or DAY_ALIASES.get(part[:4]) or part
+        if key not in WEEKDAY_NAMES:
+            raise ValueError(f"noma'lum hafta kuni: '{part}'")
+        if key not in days:
+            days.append(key)
+    if not days:
+        raise ValueError("kamida bitta hafta kuni kerak")
+    return sorted(days, key=WEEKDAY_NAMES.index)
 
 
-def cmd_holat(config):
-    today = datetime.now().date()
-    date_str = today.strftime("%Y-%m-%d")
-    weekday_name = WEEKDAY_NAMES[today.weekday()]
-
-    overrides = config.get("date_overrides", {})
-    if date_str in overrides:
-        day_type = overrides[date_str]
-        source = "maxsus belgilangan (date_override)"
-    else:
-        day_type = config.get("week_schedule", {}).get(weekday_name)
-        source = "haftalik jadval bo'yicha"
-
-    print(f"Bugun: {date_str} ({WEEKDAY_UZ.get(weekday_name, weekday_name)})")
-    if not day_type:
-        print(f"Kun turi: belgilanmagan - bugun qo'ng'iroq CHALINMAYDI ({source})")
+def cmd_royxat(config):
+    bells = sorted(config.get("bells", []), key=lambda b: b.get("time", ""))
+    if not bells:
+        print("Hali qo'ng'iroq qo'shilmagan.")
         return
-
-    print(f"Kun turi: {day_type}  [{source}]")
-    events = config.get("day_types", {}).get(day_type, [])
-    if not events:
-        print("Bu kun turi uchun signal jadvali topilmadi.")
-        return
-    print("Bugungi signallar:")
-    for e in events:
-        print(f"  {e.get('time')}  -  {e.get('label')}  ({e.get('sound')})")
+    for b in bells:
+        days = ",".join(WEEKDAY_SHORT_UZ[WEEKDAY_NAMES.index(d)] for d in b.get("days", []) if d in WEEKDAY_NAMES)
+        weeks = f"{b['weeks']} hafta ({b.get('start_date')} dan)" if b.get("weeks") else "doimiy"
+        print(f"{b.get('id')}  {b.get('time')}  {b.get('label')}  [{days}]  "
+              f"{b.get('rings', 1)} marta  {weeks}  ({b.get('sound')})")
 
 
-def cmd_belgila(config, date_str, day_type):
+def cmd_qosh(config, args):
+    if not TIME_RE.match(args.vaqt):
+        print("XATO: vaqt HH:MM formatida bo'lishi kerak (masalan 08:25).")
+        return False
     try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        print(f"XATO: sana formati noto'g'ri. YYYY-MM-DD formatida yozing (masalan 2026-09-25). Siz: {date_str}")
-        return config, False
+        days = parse_days(args.kunlar)
+    except ValueError as e:
+        print(f"XATO: {e}")
+        return False
+    if args.marta < 1:
+        print("XATO: --marta kamida 1 bo'lishi kerak.")
+        return False
+    if args.hafta is not None and args.hafta < 1:
+        print("XATO: --hafta kamida 1 bo'lishi kerak.")
+        return False
+    bell = {
+        "id": secrets.token_hex(4),
+        "time": args.vaqt,
+        "label": args.nom or "Qo'ng'iroq",
+        "sound": args.ovoz,
+        "days": days,
+        "rings": args.marta,
+        "weeks": args.hafta,
+        "start_date": date.today().isoformat(),
+    }
+    config.setdefault("bells", []).append(bell)
+    config["bells"].sort(key=lambda b: b.get("time", ""))
+    print(f"OK: qo'ng'iroq qo'shildi (ID: {bell['id']}).")
+    return True
 
-    if day_type not in config.get("day_types", {}):
-        print(f"XATO: '{day_type}' nomli kun turi topilmadi. Mavjudlari:")
-        cmd_turlar(config)
-        return config, False
 
-    config.setdefault("date_overrides", {})[date_str] = day_type
-    print(f"OK: {date_str} sanasi endi '{day_type}' kun turi bo'yicha ishlaydi.")
-    return config, True
-
-
-def cmd_bekor(config, date_str):
-    overrides = config.get("date_overrides", {})
-    if date_str in overrides:
-        del overrides[date_str]
-        print(f"OK: {date_str} uchun maxsus belgilash bekor qilindi. Endi haftalik jadval bo'yicha ishlaydi.")
-        return config, True
-    else:
-        print(f"'{date_str}' uchun maxsus belgilash topilmadi (o'zgartirish shart emas).")
-        return config, False
-
-
-def cmd_hafta(config, weekday_name, day_type):
-    weekday_name = weekday_name.lower()
-    if weekday_name not in WEEKDAY_NAMES:
-        print(f"XATO: '{weekday_name}' hafta kuni emas. Quyidagilardan birini yozing: {', '.join(WEEKDAY_NAMES)}")
-        return config, False
-
-    if day_type.lower() != "bosh" and day_type not in config.get("day_types", {}):
-        print(f"XATO: '{day_type}' nomli kun turi topilmadi. Mavjudlari:")
-        cmd_turlar(config)
-        return config, False
-
-    value = None if day_type.lower() == "bosh" else day_type
-    config.setdefault("week_schedule", {})[weekday_name] = value
-    uz = WEEKDAY_UZ.get(weekday_name, weekday_name)
-    if value is None:
-        print(f"OK: {uz} kuni endi qo'ng'iroq chalinmaydigan kun sifatida belgilandi.")
-    else:
-        print(f"OK: {uz} kuni endi doimiy '{value}' kun turi bo'yicha ishlaydi.")
-    return config, True
+def cmd_ochir(config, bell_id):
+    bells = config.get("bells", [])
+    remaining = [b for b in bells if b.get("id") != bell_id]
+    if len(remaining) == len(bells):
+        print(f"XATO: '{bell_id}' ID li qo'ng'iroq topilmadi.")
+        return False
+    config["bells"] = remaining
+    print("OK: qo'ng'iroq o'chirildi.")
+    return True
 
 
 def main():
-    args = sys.argv[1:]
-    if not args:
+    parser = argparse.ArgumentParser(description="OIS School Bell - jadval boshqaruvi")
+    sub = parser.add_subparsers(dest="command")
+    sub.add_parser("royxat")
+    p = sub.add_parser("qosh")
+    p.add_argument("vaqt")
+    p.add_argument("kunlar")
+    p.add_argument("ovoz")
+    p.add_argument("nom", nargs="?", default="")
+    p.add_argument("--marta", type=int, default=1)
+    p.add_argument("--hafta", type=int, default=None)
+    p = sub.add_parser("ochir")
+    p.add_argument("id")
+    args = parser.parse_args()
+
+    if not args.command:
         print(__doc__)
         return
 
     config = load_config()
-    command = args[0]
     changed = False
-
-    if command == "holat":
-        cmd_holat(config)
-    elif command == "turlar":
-        cmd_turlar(config)
-    elif command == "belgila":
-        if len(args) != 3:
-            print("Foydalanish: python bell_admin.py belgila <SANA:YYYY-MM-DD> <KUN_TURI>")
-            return
-        config, changed = cmd_belgila(config, args[1], args[2])
-    elif command == "bekor":
-        if len(args) != 2:
-            print("Foydalanish: python bell_admin.py bekor <SANA:YYYY-MM-DD>")
-            return
-        config, changed = cmd_bekor(config, args[1])
-    elif command == "hafta":
-        if len(args) != 3:
-            print("Foydalanish: python bell_admin.py hafta <HAFTA_KUNI> <KUN_TURI|bosh>")
-            return
-        config, changed = cmd_hafta(config, args[1], args[2])
-    else:
-        print(f"Noma'lum buyruq: {command}\n")
-        print(__doc__)
-        return
-
+    if args.command == "royxat":
+        cmd_royxat(config)
+    elif args.command == "qosh":
+        changed = cmd_qosh(config, args)
+    elif args.command == "ochir":
+        changed = cmd_ochir(config, args.id)
     if changed:
         save_config(config)
 

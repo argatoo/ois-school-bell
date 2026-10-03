@@ -1,0 +1,24 @@
+{
+  "_readme": "O'zbekiston davlat bayramlari (dam olish kunlari). 'fixed' - har yili bir xil sanadagi bayramlar (OO-KK). 'dated' - aniq sanali bayramlar: Ramazon va Qurbon hayiti Oy kalendariga ko'ra har yili o'zgaradi, bu yerdagi sanalar oldindan hisoblangan TAXMINIY sanalar ('approx': true) - rasmiy sana e'lon qilingach, kerak bo'lsa shu yerda tuzating. Hukumat qarori bilan qo'shimcha dam olish kunlari (ko'chirilgan kunlar) bo'lsa, ularni panelning Kalendar bo'limida 'Dam olish kuni' sifatida qo'shing.",
+  "fixed": [
+    { "md": "01-01", "label": { "uz": "Yangi yil", "ru": "Новый год", "en": "New Year's Day" } },
+    { "md": "03-08", "label": { "uz": "Xalqaro xotin-qizlar kuni", "ru": "Международный женский день", "en": "International Women's Day" } },
+    { "md": "03-21", "label": { "uz": "Navro'z bayrami", "ru": "Навруз", "en": "Navruz" } },
+    { "md": "05-09", "label": { "uz": "Xotira va qadrlash kuni", "ru": "День памяти и почестей", "en": "Day of Remembrance and Honour" } },
+    { "md": "09-01", "label": { "uz": "Mustaqillik kuni", "ru": "День независимости", "en": "Independence Day" } },
+    { "md": "10-01", "label": { "uz": "O'qituvchi va murabbiylar kuni", "ru": "День учителя и наставника", "en": "Teachers' and Mentors' Day" } },
+    { "md": "12-08", "label": { "uz": "Konstitutsiya kuni", "ru": "День Конституции", "en": "Constitution Day" } }
+  ],
+  "dated": [
+    { "date": "2026-03-20", "approx": true, "label": { "uz": "Ramazon hayiti", "ru": "Рамазан хайит", "en": "Eid al-Fitr" } },
+    { "date": "2026-05-27", "approx": true, "label": { "uz": "Qurbon hayiti", "ru": "Курбан хайит", "en": "Eid al-Adha" } },
+    { "date": "2027-03-10", "approx": true, "label": { "uz": "Ramazon hayiti", "ru": "Рамазан хайит", "en": "Eid al-Fitr" } },
+    { "date": "2027-05-17", "approx": true, "label": { "uz": "Qurbon hayiti", "ru": "Курбан хайит", "en": "Eid al-Adha" } },
+    { "date": "2028-02-27", "approx": true, "label": { "uz": "Ramazon hayiti", "ru": "Рамазан хайит", "en": "Eid al-Fitr" } },
+    { "date": "2028-05-05", "approx": true, "label": { "uz": "Qurbon hayiti", "ru": "Курбан хайит", "en": "Eid al-Adha" } },
+    { "date": "2029-02-14", "approx": true, "label": { "uz": "Ramazon hayiti", "ru": "Рамазан хайит", "en": "Eid al-Fitr" } },
+    { "date": "2029-04-24", "approx": true, "label": { "uz": "Qurbon hayiti", "ru": "Курбан хайит", "en": "Eid al-Adha" } },
+    { "date": "2030-02-04", "approx": true, "label": { "uz": "Ramazon hayiti", "ru": "Рамазан хайит", "en": "Eid al-Fitr" } },
+    { "date": "2030-04-13", "approx": true, "label": { "uz": "Qurbon hayiti", "ru": "Курбан хайит", "en": "Eid al-Adha" } }
+  ]
+}

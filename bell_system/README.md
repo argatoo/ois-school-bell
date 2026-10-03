@@ -1,4 +1,4 @@
-# Maktab qo'ng'iroq tizimi — 1-bosqich (jadval asosidagi avtomatik zvonok)
+# OIS School Bell — 1-bosqich (jadval asosidagi avtomatik zvonok)
 
 Bu — Oxford International School uchun quriladigan yangi qo'ng'iroq tizimining
 birinchi, mustaqil ishlaydigan qismi: **jadval bo'yicha avtomatik zvonok**.
@@ -12,7 +12,7 @@ bell_system/
   bell_scheduler.py     - asosiy dastur, doim ishlab turadi, jadval bo'yicha zvonok chaladi
   bell_admin.py         - jadvalni boshqarish uchun buyruq qatori vositasi
   config/
-    schedule.json        - barcha sozlamalar shu yerda: vaqtlar, kun turlari, haftalik jadval
+    schedule.json        - barcha qo'ng'iroqlar shu yerda: vaqt, hafta kunlari, ovoz, takrorlanish
   audios/
     (mp3 fayllar shu yerga qo'yiladi - O'QING.txt ichida batafsil)
   logs/
@@ -53,48 +53,46 @@ Kelajakda buni Windows/Linux "avtomatik ishga tushirish" ro'yxatiga
 qo'shib, kompyuter yonganda o'zi ishga tushadigan qilamiz — hozircha
 qo'lda ishga tushirib sinab ko'rish uchun shu yetarli.
 
-## Jadvalni boshqarish (bell_admin.py)
+## Qo'ng'iroq qo'shish
 
-Dastur ishlab turgan payt, boshqa terminal oynasida quyidagi buyruqlarni
-ishlatib jadvalni o'zgartirasiz — o'zgarish avtomatik kuchga kiradi,
-scheduler'ni qayta ishga tushirish shart emas:
+Har bir qo'ng'iroq uchun quyidagilar belgilanadi:
 
-```
-python bell_admin.py holat
-```
-Bugungi kun qaysi jadval bo'yicha ishlayotganini va barcha signallarni ko'rsatadi.
+- **vaqt** (HH:MM),
+- **hafta kunlari** (Dushanba–Yakshanba orasidan xohlaganingiz),
+- **ovoz fayli** (`audios/` papkasidan),
+- **necha marta chalinishi** — ovoz shu vaqtda ketma-ket necha marta chalinadi,
+- **necha hafta takrorlanishi** — bo'sh qoldirsangiz doimiy; masalan 4 desangiz,
+  qo'shilgan kundan boshlab 4 hafta davomida chalinadi, keyin o'zi to'xtaydi.
 
-```
-python bell_admin.py turlar
-```
-Mavjud barcha kun turlarini (oddiy, qisqartirilgan, imtihon, bayram_oldi) ko'rsatadi.
+Eng qulayi — `bell_web` boshqaruv paneli ("Qo'ng'iroqlar" tabi). Buyruq qatori orqali:
 
 ```
-python bell_admin.py belgila 2026-09-25 qisqartirilgan
+python bell_admin.py royxat
 ```
-25-sentabr kunini "qisqartirilgan kun" sifatida belgilaydi (faqat o'sha kunga).
+Barcha qo'ng'iroqlarni (ID bilan) ko'rsatadi.
 
 ```
-python bell_admin.py bekor 2026-09-25
+python bell_admin.py qosh 08:25 ish dars.mp3 "1-dars" --marta 2 --hafta 4
 ```
-Yuqoridagi maxsus belgilashni bekor qiladi, kun yana oddiy haftalik jadvalga qaytadi.
+08:25 da, ish kunlari (dush–juma), `dars.mp3` ni 2 marta ketma-ket chalib, 4 hafta davomida.
+Kunlar: `hammasi`, `ish` yoki vergul bilan `dush,sesh,chor,pay,jum,shan,yak`.
 
 ```
-python bell_admin.py hafta sunday oddiy
+python bell_admin.py ochir <ID>
 ```
-Doimiy haftalik jadvalni o'zgartiradi (masalan yakshanba kunini ham "oddiy" qilib qo'yish).
-`bosh` so'zini yozsangiz ("hafta sunday bosh"), o'sha kun umuman zvonoksiz bo'lib qoladi.
+ID bo'yicha qo'ng'iroqni o'chiradi.
+
+Dastur ishlab turganda ham bu o'zgarishlar avtomatik kuchga kiradi.
 
 ## Jadvalni qo'lda tahrirlash
 
-`config/schedule.json` faylini istalgan matn muharriri (Notepad, VS Code) bilan
-ochib, vaqt/ovoz/kun turlarini xohlagancha o'zgartirish yoki yangi kun turi
-qo'shish mumkin — fayl formati ichida izohlangan (`_readme` qatori).
+`config/schedule.json` faylini istalgan matn muharriri bilan ochib, `bells`
+ro'yxatini o'zgartirish mumkin — fayl formati ichida izohlangan (`_readme` qatori).
 
 ## Jurnal
 
 `logs/bell_log.csv` faylida har bir chalingan (yoki xato bo'lgani uchun
-chalinmagan) signal, sanasi va vaqti bilan avtomatik yoziladi. Excel'da
+chalinmagan) qo'ng'iroq, sanasi va vaqti bilan avtomatik yoziladi. Excel'da
 ochib ko'rish mumkin.
 
 ## Jonli e'lon (mikrofon -> speaker)
@@ -115,8 +113,26 @@ python live_announce.py
 ```
 To'xtatish: Ctrl+C.
 
+## Ovoz dispetcheri (ustma-ust chalinmaslik)
+
+Karnayga chiqadigan hamma tovush `audio_engine.py` orqali o'tadi. Daraja bo'yicha:
+
+1. **E'lon** — panelning "Hozir dinamikdan chalish"i, kutubxonadagi "E'lon" turidagi fayllar, jonli mikrofon
+2. **Qo'ng'iroq** — oddiy qo'ng'iroqlar (kutubxonada turi "Qo'ng'iroq" yoki kutubxonadan tashqari fayllar)
+3. **Musiqa** — kutubxonadagi "Musiqa" turidagi fayllar
+
+Qoidalar:
+- Qo'ng'iroq yoki e'lon (yoki mikrofon) paytida musiqa **15% gacha asta pasayadi** va keyin qaytadi — to'xtamaydi.
+- Bir darajadagi tovushlar **navbat bilan**, birin-ketin chalinadi (ikki qo'ng'iroq bir vaqtda kelsa ham).
+- Qo'ng'iroq e'lon yoki mikrofon tugashini kutadi, lekin **ko'pi bilan 2 daqiqa** — keyin baribir chalinadi.
+- E'lon chalinayotgan qisqa qo'ng'iroq tugashini kutadi.
+
+Panel (`bell_web/server.js`) dispetcherga faqat shu kompyuter ichidagi `127.0.0.1:3901` port orqali
+xabar beradi (`/play`, `/stop`, `/mic`, `/status`). Qo'ng'iroq dasturi ishlamayotgan bo'lsa,
+panelning "hozir chalish"i eski usulda (to'g'ridan-to'g'ri) chalinadi.
+
 ## Keyingi bosqichlar (hali qilinmagan)
 
 - Telefon orqali jonli e'lon (SIP) — tashqi/ichki qo'ng'iroq orqali `live_announce.py` ni avtomatik ishga tushirish, hali qo'shilmagan
 - Favqulodda signal tugmasi
-- Kompyuter yoqilganda dasturning o'zi avtomatik ishga tushishi
+- Panelda "hozir karnayda nima chalinmoqda" ko'rsatkichi

@@ -1,0 +1,4 @@
+{
+  "_readme": "Bu fayl qo'ng'iroq jadvalini belgilaydi. 'bells' - qo'ng'iroqlar ro'yxati. Har bir qo'ng'iroqda: 'time' (HH:MM, 24 soatlik), 'label' (nomi), 'sound' (audios/ papkasidagi fayl nomi), 'days' (qaysi hafta kunlari: monday..sunday), 'rings' (ovoz shu vaqtda necha marta ketma-ket chalinadi), 'volume' (ovoz balandligi, foizda 1..100), 'weeks' (necha hafta takrorlanadi, null = doimiy) va 'start_date' (hisoblash boshlanadigan sana, YYYY-MM-DD). Odatda bu fayl boshqaruv paneli orqali o'zgartiriladi.",
+  "bells": []
+}

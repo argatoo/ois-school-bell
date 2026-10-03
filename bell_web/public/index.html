@@ -3,7 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Qo'ng'iroq nazorati</title>
+<title>OIS School Bell</title>
+<script>
+  // Sahifa chizilishidan oldin saqlangan mavzu va tilni qo'llash (yonib ketmasligi uchun)
+  (function(){
+    try{
+      var th = localStorage.getItem("ois-theme");
+      if(th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th);
+      var lg = localStorage.getItem("ois-lang");
+      if(lg === "uz" || lg === "ru" || lg === "en") document.documentElement.lang = lg;
+    }catch(e){}
+  })();
+</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
 <style>
   :root{
@@ -13,7 +24,8 @@
     --teal:#1f6f6b; --teal-soft:#d9ece9;
     --ok:#2f8a52; --crit:#c2455a;
     --shadow:0 1px 2px rgba(20,30,27,.06),0 8px 24px -12px rgba(20,30,27,.18);
-    --radius:14px;
+    --radius:26px;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -23,6 +35,7 @@
       --teal:#4fbdb5; --teal-soft:#17302d;
       --ok:#5cbf82; --crit:#e37e8e;
       --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -12px rgba(0,0,0,.55);
+      color-scheme: dark;
     }
   }
   :root[data-theme="dark"]{
@@ -32,22 +45,46 @@
     --teal:#4fbdb5; --teal-soft:#17302d;
     --ok:#5cbf82; --crit:#e37e8e;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px -12px rgba(0,0,0,.55);
+    color-scheme: dark;
   }
   *{box-sizing:border-box}
+  /* "hidden" atributi har doim ishlasin (aks holda .panel{display:flex} kabi qoidalar uni bekor qiladi) */
+  [hidden]{display:none !important}
   html,body{margin:0;padding:0}
+  /* ---------- Scrollbar: brauzerning standart (katta, oq) o'rniga ingichka, mavzuga mos ---------- */
+  *{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background-color:var(--line);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background-color:var(--text-dim)}
+  ::-webkit-scrollbar-corner{background:transparent}
   body{
     background:var(--bg); color:var(--text);
     font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    padding:20px 16px 48px; display:flex; flex-direction:column; gap:16px;
+    padding:20px 16px 100px; display:flex; flex-direction:column; gap:16px;
     max-width:980px; margin:0 auto; font-variant-numeric:tabular-nums;
   }
   .mono{font-family:'IBM Plex Mono','SF Mono',Menlo,monospace}
   header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
   .brand{display:flex;gap:12px;align-items:center}
-  .bell-mark{width:42px;height:42px;border-radius:11px;background:linear-gradient(155deg,var(--accent),#8a4c13);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);flex:none}
+  .bell-mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(155deg,var(--accent),#8a4c13);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);flex:none}
   .bell-mark svg{width:22px;height:22px}
   .brand h1{font-size:17px;margin:0;font-weight:600}
   .brand p{margin:2px 0 0;font-size:12.5px;color:var(--text-dim)}
+  .header-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+  .toolbar{display:flex;align-items:center;gap:8px}
+  .toolbar .seg button{padding:5px 11px;font-size:12px}
+  .toolbar{--h:38px}
+  .toolbar .seg{height:var(--h)}
+  .toolbar .theme-btn{width:var(--h);height:var(--h);padding:0;border-radius:999px}
+  .theme-btn svg{width:20px;height:20px}
+  .theme-btn .i-sun{display:none}
+  :root[data-theme="dark"] .theme-btn .i-sun{display:block}
+  :root[data-theme="dark"] .theme-btn .i-moon{display:none}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme]) .theme-btn .i-sun{display:block}
+    :root:not([data-theme]) .theme-btn .i-moon{display:none}
+  }
   .clock-block{text-align:right}
   .clock-block .time{font-size:28px;font-weight:600}
   .clock-block .date{font-size:12.5px;color:var(--text-dim);margin-top:2px}
@@ -59,24 +96,20 @@
   .banner b{color:var(--teal)}
   .banner svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--teal)}
   .banner.err{background:color-mix(in srgb, var(--crit) 15%, var(--panel));border-color:color-mix(in srgb, var(--crit) 40%, transparent)}
-  .banner.err b{color:var(--crit)}
-  .modebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow)}
+  .banner.err b,.banner.err svg{color:var(--crit)}
   .seg{display:flex;background:var(--panel-2);border-radius:999px;padding:3px;gap:2px}
   .seg button{border:none;background:transparent;color:var(--text-dim);font:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
   .seg button.active{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-  .modebar .simrow{display:flex;align-items:center;gap:10px;flex:1;min-width:240px}
-  .modebar input[type=range]{flex:1;accent-color:var(--accent)}
-  .simtime{font-size:13px;font-weight:600;min-width:52px;text-align:right}
-  .playbtn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
+  .playbtn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:14px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
   .playbtn:hover{border-color:var(--accent)}
   .playbtn:disabled{opacity:.5;cursor:wait}
   .playbtn.live{background:var(--crit);border-color:var(--crit);color:#fff}
   .playbtn.live svg{animation:pulse 1.1s ease-in-out infinite}
   .playbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  .icon-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:8px;padding:0 12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .icon-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:14px;padding:0 12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
   .icon-btn:hover{border-color:var(--accent)}
   .icon-btn:disabled{opacity:.5;cursor:wait}
-  .hero{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;position:relative;overflow:hidden}
+  .hero{background:var(--panel);border:1px solid var(--line);border-radius:32px;padding:26px 32px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;position:relative;overflow:hidden}
   .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 200px at 85% -20%, var(--accent-soft), transparent 70%);pointer-events:none}
   .hero .left{position:relative;z-index:1}
   .eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:600}
@@ -87,10 +120,6 @@
   .countdown .cap{font-size:12px;color:var(--text-dim);margin-top:4px}
   .pulse{animation:pulse 1.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
-  .daytype-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:999px;margin-top:10px}
-  .daytype-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
-  .daytype-badge.off{background:var(--panel-2);color:var(--text-dim)}
-  .daytype-badge.off .dot{background:var(--text-dim)}
 
   .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
   .tab{border:none;background:transparent;color:var(--text-dim);font:inherit;font-size:13.5px;font-weight:600;padding:10px 6px;margin-right:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -99,12 +128,11 @@
   .tabpane{display:flex;flex-direction:column;gap:16px}
   .tabpane[hidden]{display:none}
 
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px 22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
   .panel h2{font-size:13.5px;font-weight:600;margin:0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .panel h2 .count{font-size:11.5px;color:var(--text-dim);font-weight:500}
-  .panel .hint{font-size:12px;color:var(--text-dim);margin:-6px 0 2px}
   .timeline{display:flex;flex-direction:column;gap:2px;max-height:520px;overflow-y:auto}
-  .tl-row{display:grid;grid-template-columns:56px 20px 1fr auto;align-items:center;gap:10px;padding:9px 6px;border-radius:9px;font-size:13px}
+  .tl-row{display:grid;grid-template-columns:56px 20px 1fr auto;align-items:center;gap:10px;padding:9px 6px;border-radius:14px;font-size:13px}
   .tl-row .t{font-weight:600;color:var(--text-dim)}
   .tl-row .dot{width:8px;height:8px;border-radius:50%;background:var(--line);justify-self:center}
   .tl-row .snd{font-size:11px;color:var(--text-dim)}
@@ -114,54 +142,303 @@
   .tl-row.now .dot{background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent)}
   .tl-row.next .dot{background:var(--teal)}
   .tl-row.next .t{color:var(--teal)}
-  .dt-list{display:flex;flex-direction:column;gap:8px}
-  .dt-btn{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
-  .dt-btn b{font-weight:600}
-  .dt-btn span.n{font-size:11.5px;color:var(--text-dim);font-weight:500}
-  .dt-btn.active{border-color:var(--accent);background:var(--accent-soft)}
-  .dt-btn.active b{color:var(--accent)}
-  .dt-btn:hover{border-color:var(--accent)}
-  .dt-btn:disabled{opacity:.5;cursor:wait}
-  .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .week-cell{border:1px solid var(--line);border-radius:9px;padding:8px 4px;text-align:center;font-size:10.5px;display:flex;flex-direction:column;gap:5px;background:var(--panel-2)}
-  .week-cell.today{border-color:var(--accent)}
-  .week-cell .d{font-weight:600;color:var(--text-dim)}
-  .week-cell select{font:inherit;font-size:10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:3px 2px;width:100%}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .stat{background:var(--panel-2);border-radius:10px;padding:10px;text-align:center}
-  .stat .v{font-size:18px;font-weight:700}
-  .stat .k{font-size:10.5px;color:var(--text-dim);margin-top:2px}
+  .rings-badge{font-size:11.5px;font-weight:600;color:var(--text-dim);background:var(--panel-2);border-radius:999px;padding:2px 8px}
+  .tl-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .tl-countdown{font-size:11.5px;color:var(--text-dim);white-space:nowrap}
+  .tl-row.now .tl-countdown{color:var(--accent);font-weight:600}
   .log{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
-  .log-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px;padding:7px 8px;border-radius:8px;background:var(--panel-2)}
+  .log-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px;padding:7px 8px;border-radius:14px;background:var(--panel-2)}
   .log-row .lt{color:var(--text-dim);font-weight:600;min-width:130px}
   .log-empty{font-size:12.5px;color:var(--text-dim);padding:14px 6px;text-align:center}
 
-  .sig-editrow{display:flex;gap:8px;align-items:center}
-  .sig-editrow label{font-size:12px;color:var(--text-dim);font-weight:600;white-space:nowrap}
-  .sig-editrow select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text);padding:8px 10px;flex:1}
-  .sig-list{display:flex;flex-direction:column;gap:6px}
-  .sig-row{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;background:var(--panel-2);font-size:13px}
-  .sig-row .t{font-weight:600;color:var(--accent)}
-  .sig-row .snd{font-size:11px;color:var(--text-dim)}
-  .sig-del{border:none;background:transparent;color:var(--crit);cursor:pointer;font-size:16px;line-height:1;padding:4px 8px;border-radius:6px}
-  .sig-del:hover{background:color-mix(in srgb, var(--crit) 15%, transparent)}
-
-  .sig-add-card{border:1px dashed var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
-  .sig-add-title{font-size:12.5px;font-weight:600;color:var(--text-dim)}
-  .field-row{display:grid;grid-template-columns:110px 1.5fr 1.4fr auto;gap:10px;align-items:end}
+  .form-grid{display:flex;flex-direction:column;gap:14px}
+  .field-row{display:grid;grid-template-columns:110px 1.5fr 1.4fr;gap:10px;align-items:end}
+  .field-row.second{grid-template-columns:1fr 1fr}
   .field{display:flex;flex-direction:column;gap:4px;min-width:0}
   .field label{font-size:11px;color:var(--text-dim);font-weight:600}
-  .field input,.field select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text);padding:8px 10px;width:100%}
+  .field .fhint{font-size:10.5px;color:var(--text-dim)}
+  .field input,.field select,.field textarea{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);color:var(--text);padding:8px 10px;width:100%}
+  .field textarea{resize:vertical;min-height:110px;line-height:1.55}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  /* ---------- AI e'lon ---------- */
+  .ai-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ai-row .grow{flex:1}
+  .ai-row > .fhint{font-size:11.5px;color:var(--text-dim)}
+  .ai-row input[type=text]{flex:1;min-width:180px;width:auto}
+  .ai-note{font-size:12.5px;line-height:1.6;color:var(--text-dim);background:var(--accent-soft);border-radius:14px;padding:10px 14px}
+  .ai-note b{color:var(--text)}
+  .ai-suggest{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .ai-suggest .ai-sug-head{font-size:11px;font-weight:600;color:var(--text-dim)}
+  .ai-sug{border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;font-size:13px;line-height:1.55;text-align:left;padding:10px 12px;border-radius:14px;cursor:pointer}
+  .ai-sug:hover{border-color:var(--accent)}
+  .ai-sug.main{border-color:var(--accent)}
+  .ai-sel-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;align-items:end}
+  @media (max-width:720px){ .ai-sel-row{grid-template-columns:1fr} }
+  #aiOpPlay svg{width:14px;height:14px}
+  #aiOpPlay.loading{animation:pulse 1s ease-in-out infinite}
+  .sound-row #aiOpPlay{width:40px}
+  .ai-sel-row .sound-row .csel-panel{right:auto;min-width:300px;max-height:320px}
+  .ai-vol{flex:1;min-width:180px}
+  #aiAudio{width:100%}
+  .ai-steps{margin:0;padding-left:20px;font-size:13px;line-height:1.8;color:var(--text-dim)}
+  .ai-steps b{color:var(--text)}
+  .ai-steps a{color:var(--accent)}
+  .key-state{font-weight:600;margin-left:4px}
+  .key-state.ok{color:var(--ok)}
+  .key-state.no{color:var(--text-dim)}
+  .ai-azure summary{cursor:pointer;font-size:12.5px;color:var(--text-dim);font-weight:600;padding:4px 0}
+  .ai-azure[open] summary{margin-bottom:10px}
+  .ai-row input[type=password]{flex:1;min-width:180px;width:auto}
+  a.playbtn{text-decoration:none}
   .sound-row{display:flex;gap:6px}
+  .vol-row{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:6px 12px}
+  .vol-row .vol-ico{width:16px;height:16px;flex:none;color:var(--text-dim)}
+  .field .vol-row input[type=range]{flex:1;min-width:0;padding:0;border:none;background:transparent;accent-color:var(--accent);height:24px;cursor:pointer}
+  .vol-val{min-width:44px;text-align:right;font-size:13px;font-weight:600}
   .sound-row select{flex:1;min-width:0}
-  @media (max-width:720px){.field-row{grid-template-columns:1fr 1fr}}
+  .days-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .days-head label{font-size:11px;color:var(--text-dim);font-weight:600}
+  .presets{display:flex;gap:6px;flex-wrap:wrap}
+  .preset{border:1px solid var(--line);background:transparent;color:var(--text-dim);font:inherit;font-size:11.5px;padding:3px 10px;border-radius:999px;cursor:pointer}
+  .preset:hover{border-color:var(--accent);color:var(--text)}
+  .chips{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
+  .day-chip{border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);font:inherit;font-size:12.5px;font-weight:600;padding:9px 4px;border-radius:14px;cursor:pointer}
+  .day-chip:hover{border-color:var(--accent)}
+  .day-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .day-chip:disabled{opacity:.5;cursor:wait}
+  @media (max-width:720px){
+    .field-row{grid-template-columns:1fr 1fr}
+  }
+
+  .add-btn{margin-top:16px;border:none;background:var(--accent);color:#fff;font:inherit;font-size:14px;font-weight:600;padding:11px 22px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:filter .12s ease}
+  .add-btn:hover{filter:brightness(1.08)}
+  .add-btn svg{width:18px;height:18px}
+  .fab{position:fixed;left:20px;bottom:20px;z-index:900;height:56px;min-width:56px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);box-shadow:0 10px 28px -8px rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 17px;font:inherit;font-size:13.5px;font-weight:600;transition:transform .12s ease,border-color .12s ease}
+  .fab:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .fab:disabled{opacity:.6;cursor:wait}
+  .fab svg{width:22px;height:22px;flex:none}
+  .fab.live{background:var(--crit);border-color:var(--crit);color:#fff}
+  .fab.live svg{animation:pulse 1.1s ease-in-out infinite}
+  .fab:not(.live) .fab-label{display:none}
+  dialog.modal{border:none;padding:0;background:transparent;color:var(--text);width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:visible}
+  dialog.modal::backdrop{background:rgba(8,14,13,.55);backdrop-filter:blur(2px)}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:30px;box-shadow:0 24px 60px -16px rgba(0,0,0,.5);padding:26px 28px 28px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 24px);overflow-y:auto}
+  .modal-card:focus{outline:none}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .modal-head h2{margin:0;font-size:16px;font-weight:600}
+  .modal-close{border:none;background:transparent;color:var(--text-dim);font-size:24px;line-height:1;cursor:pointer;padding:2px 8px;border-radius:14px}
+  .modal-close:hover{background:var(--panel-2);color:var(--text)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px}
+  .modal-actions .playbtn{padding:10px 20px;font-size:13.5px;font-weight:600}
+  .modal .banner{margin:0}
+  dialog.modal.ask{width:min(440px,calc(100vw - 24px))}
+  /* ---------- Kalendar: chapda ixcham oy (sana tanlagich uslubi), o'ngda tanlangan kun ---------- */
+  .cal-wrap{display:grid;grid-template-columns:minmax(250px,310px) 1fr;gap:28px;align-items:start}
+  .cal-left{display:flex;flex-direction:column;gap:8px}
+  .cal-right{display:flex;flex-direction:column;gap:12px;min-width:0;border-left:1px solid var(--line);padding-left:28px;align-self:stretch}
+  .cal-right h2{font-size:14px;font-weight:600;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .cal-right h2 .count{font-size:11.5px;color:var(--text-dim);font-weight:500}
+  .cal-head{display:flex;align-items:center;gap:4px}
+  .cal-head h2{flex:1;font-size:14.5px;margin:0 0 0 4px}
+  .cal-head .grow{display:none}
+  .cal-nav{width:32px;height:32px;padding:0;border-radius:50%}
+  .cal-nav svg{width:15px;height:15px}
+  #calTodayBtn{padding:6px 12px;margin-left:4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+  .cal-wd{font-size:10.5px;font-weight:600;color:var(--text-dim);text-align:center;padding:4px 0}
+  .cal-day{height:42px;border:none;background:none;color:var(--text);font:inherit;cursor:pointer;padding:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .cal-day .num{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:600;border:1.5px solid transparent;transition:background .12s ease}
+  .cal-day:hover .num{background:var(--panel-2)}
+  .cal-day .marks{display:flex;gap:3px;height:4px}
+  .mk{display:inline-block;width:4px;height:4px;border-radius:50%;flex:none}
+  .mk.b{background:var(--text-dim)}
+  .mk.e{background:var(--accent)}
+  .cal-day.other{opacity:.3}
+  .cal-day.past:not(.today):not(.sel){opacity:.5}
+  .cal-wd.wknd,.cal-day.wknd .num{color:var(--crit)}
+  .cal-day.hol .num{background:color-mix(in srgb, var(--teal) 24%, transparent);color:var(--teal)}
+  .cal-day.pub .num{background:color-mix(in srgb, var(--crit) 22%, transparent);color:var(--crit)}
+  .lg-pub{background:color-mix(in srgb, var(--crit) 45%, transparent)}
+  .pub-toggle{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+  .pub-toggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .pub-head{font-size:11px;font-weight:600;color:var(--text-dim);margin-top:4px}
+  .pub-list{display:flex;flex-direction:column;gap:4px}
+  .pub-row{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 10px;border-radius:12px;background:var(--panel-2)}
+  .pub-row .pd{font-weight:600;color:var(--crit);min-width:44px}
+  .pub-row .pl{flex:1}
+  .pub-list.off{opacity:.45}
+  .cal-day.today .num{border-color:var(--accent);color:var(--accent)}
+  .cal-day.sel .num{background:var(--accent);border-color:var(--accent);color:#fff}
+  .cal-day.sel .mk{background:var(--accent)}
+  .cal-legend{display:flex;gap:4px 14px;flex-wrap:wrap;font-size:11px;color:var(--text-dim);padding-top:4px;border-top:1px solid var(--line)}
+  .cal-legend > span{display:flex;align-items:center;gap:6px;padding-top:6px}
+  .cal-legend .mk{width:6px;height:6px}
+  .lg{display:inline-block;width:11px;height:11px;border-radius:50%}
+  .lg-hol{background:color-mix(in srgb, var(--teal) 45%, transparent)}
+  .cal-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:600px){
+    .cal-wrap,.cal-lists{grid-template-columns:1fr}
+    .cal-right{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:16px}
+  }
+  .onetime-badge{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .bell-row .t.date{font-size:12px;line-height:1.3}
+  .ask-head{display:flex;align-items:center;gap:12px}
+  .ask-head h2{margin:0;font-size:16px;font-weight:600}
+  .ask-icon{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, var(--crit) 16%, transparent);color:var(--crit)}
+  .ask-icon.info{background:var(--accent-soft);color:var(--accent)}
+  .ask-icon svg{width:20px;height:20px}
+  .ask-text{font-size:13.5px;line-height:1.6;color:var(--text-dim)}
+  .ask-text b{color:var(--text)}
+  .ask-text .ask-warn{margin-top:8px;color:var(--crit);font-weight:600}
+  .playbtn.danger{background:var(--crit);border-color:var(--crit);color:#fff}
+  .playbtn.danger:hover{filter:brightness(1.08)}
+  .toasts{position:fixed;bottom:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 32px));pointer-events:none}
+  .toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;background:var(--panel);border:1px solid color-mix(in srgb, var(--ok) 45%, var(--line));border-left:4px solid var(--ok);border-radius:32px;padding:12px 12px 12px 14px;font-size:13px;line-height:1.5;box-shadow:0 14px 36px -12px rgba(0,0,0,.45);animation:toast-in .22s ease-out}
+  .toast.err{border-color:color-mix(in srgb, var(--crit) 45%, var(--line));border-left-color:var(--crit)}
+  .toast.out{opacity:0;transform:translateX(16px);transition:opacity .2s,transform .2s}
+  .toast svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--ok)}
+  .toast.err svg{color:var(--crit)}
+  .toast b{color:var(--ok)}
+  .toast.err b{color:var(--crit)}
+  .toast-msg{flex:1;min-width:0;overflow-wrap:anywhere}
+  .toast-x{flex:none;border:none;background:transparent;color:var(--text-dim);font-size:18px;line-height:1;cursor:pointer;padding:0 4px;border-radius:10px}
+  .toast-x:hover{color:var(--text)}
+  @keyframes toast-in{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+  .modal .banner[hidden]{display:none}
+  .timepick{position:relative}
+  .timepick input{cursor:pointer;padding-right:36px;font-size:14px;font-weight:600}
+  .timepick input::placeholder{font-weight:400}
+  .tp-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-dim);pointer-events:none}
+  .tp-pop{position:fixed;z-index:50;top:0;left:0;width:250px;padding:14px 14px 12px;background:var(--panel);border:1px solid var(--line);border-radius:26px;box-shadow:0 22px 48px -12px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:6px}
+  .tp-pop[hidden]{display:none}
+  .tp-heads{display:grid;grid-template-columns:1fr 14px 1fr;text-align:center;font-size:12px;font-weight:600;color:var(--text-dim);letter-spacing:.04em}
+  .tp-wheels{position:relative;display:grid;grid-template-columns:1fr 14px 1fr;align-items:center;height:220px}
+  .tp-band{position:absolute;left:0;right:0;top:88px;height:44px;border-radius:16px;background:var(--panel-2);pointer-events:none}
+  .tp-sep{position:relative;z-index:1;text-align:center;font-size:26px;font-weight:600;color:var(--text);opacity:.8;padding-bottom:3px}
+  .tp-wheel{position:relative;z-index:1;height:220px;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;padding:88px 0;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 30%,#000 70%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 30%,#000 70%,transparent 100%)}
+  .tp-wheel::-webkit-scrollbar{display:none}
+  .tp-item{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;scroll-snap-stop:always;border:none;background:transparent;color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;transform-origin:center;will-change:transform,opacity}
+  .tp-ok{align-self:stretch;justify-content:center;border-radius:999px;padding:10px;margin-top:2px;font-weight:600;font-size:13.5px}
+  .link-btn{border:none;background:transparent;color:var(--accent);font:inherit;font-size:11.5px;cursor:pointer;padding:2px 0;text-align:left}
+  .link-btn:hover{text-decoration:underline}
+  .acc-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+  .acc-info{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px}
+  .acc-note{font-size:12.5px;color:var(--text-dim);line-height:1.6}
+  .lib-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .lib-toolbar[hidden]{display:none}
+  .lib-toolbar label{font-size:12px;color:var(--text-dim);font-weight:600}
+  .lib-toolbar .grow{flex:1}
+  .kind-sel{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);padding:6px 12px;cursor:pointer}
+
+  /* ---------- Custom dropdown: <select> o'rniga (brauzer o'zining standart, tuzatib bo'lmaydigan
+     ochiladigan ro'yxatini chizadi - shuning uchun uni to'liq o'zimiz chizamiz). Asl <select> yashirin
+     holda qoladi, qiymat va "change" hodisasi aynan o'sha orqali ishlayveradi. ---------- */
+  .csel{position:relative}
+  .csel-native{display:none}
+  .csel-trigger{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2);color:var(--text);padding:8px 10px;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;text-align:left}
+  .csel-trigger:hover{border-color:var(--accent)}
+  .csel-trigger:disabled{opacity:.5;cursor:wait}
+  .csel-trigger[aria-expanded="true"]{border-color:var(--accent)}
+  .csel-trigger.kind-sel{width:auto;font-size:12px}
+  .csel-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .csel-chev{flex:none;width:14px;height:14px;opacity:.6;transition:transform .15s ease}
+  .csel-trigger[aria-expanded="true"] .csel-chev{transform:rotate(180deg)}
+  .csel-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:160px;max-width:min(320px,80vw);z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:6px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+  .csel-panel[hidden]{display:none}
+  .sound-row .csel{flex:1;min-width:0}
+  .sound-row .csel-panel{left:0;right:0;min-width:0}
+  .csel-group{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);padding:8px 10px 2px}
+  .csel-opt{border:none;background:transparent;color:var(--text);font:inherit;font-size:13px;text-align:left;padding:8px 10px;border-radius:10px;cursor:pointer;display:block;width:100%}
+  .csel-opt:hover{background:var(--panel-2)}
+  .csel-opt.sel{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .csel-opt:disabled{opacity:.5;cursor:default}
+  .lib-status{font-size:11.5px;color:var(--text-dim)}
+  .lib-status.err{color:var(--crit)}
+  .lib-list{display:flex;flex-direction:column;gap:6px}
+  .lib-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 12px;border-radius:20px;background:var(--panel-2);font-size:13px}
+  .lib-play{width:40px;height:40px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .lib-play svg{width:16px;height:16px}
+  .lib-name{font-weight:600;overflow-wrap:anywhere}
+  .lib-meta{font-size:11.5px;color:var(--text-dim);margin-top:2px}
+  .lib-actions{display:flex;gap:2px}
+  .icon-plain{border:none;background:transparent;color:var(--text-dim);cursor:pointer;padding:7px;border-radius:12px;display:flex}
+  .icon-plain:hover{background:var(--panel);color:var(--text)}
+  .icon-plain.danger:hover{color:var(--crit)}
+  .icon-plain svg{width:16px;height:16px}
+  @media (max-width:720px){
+    .acc-form{grid-template-columns:1fr}
+    .lib-row{grid-template-columns:auto 1fr auto}
+    .lib-row .csel{grid-column:2 / 3;justify-self:start}
+  }
+  .bell-list{display:flex;flex-direction:column;gap:6px}
+  .bell-row{display:grid;grid-template-columns:56px 1fr auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:var(--panel-2);font-size:13px}
+  .bell-row.expired{opacity:.5}
+  .bell-row .t{font-weight:600;color:var(--accent)}
+  .bell-row .snd{font-size:11px;color:var(--text-dim)}
+  .bell-row .daydots{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+  .bell-row .daydots span{font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:var(--panel);color:var(--text-dim);opacity:.55}
+  .bell-row .daydots span.on{background:var(--accent-soft);color:var(--accent);opacity:1}
+  .bell-row .meta{font-size:11.5px;color:var(--text-dim);text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+  .sig-del{border:none;background:transparent;color:var(--crit);cursor:pointer;font-size:16px;line-height:1;padding:4px 8px;border-radius:10px}
+  .sig-del:hover{background:color-mix(in srgb, var(--crit) 15%, transparent)}
+  .bell-actions{display:flex;align-items:center;gap:2px}
+  .sig-edit{border:none;background:transparent;color:var(--text-dim);cursor:pointer;padding:6px;border-radius:10px;display:flex}
+  .sig-edit svg{width:16px;height:16px}
+  .sig-edit:hover{background:var(--panel);color:var(--text)}
+  .sig-edit:disabled,.sig-del:disabled{opacity:.4;cursor:wait}
+  @media (max-width:720px){
+    .bell-row{grid-template-columns:52px 1fr auto}
+    .bell-row .meta{grid-column:2 / 3;align-items:flex-start;text-align:left;flex-direction:row;gap:8px;flex-wrap:wrap}
+  }
 
   footer{text-align:center;font-size:11.5px;color:var(--text-dim);padding-top:6px}
   footer b{color:var(--text)}
-  footer code{background:var(--panel-2);padding:1px 6px;border-radius:5px}
+  footer code{background:var(--panel-2);padding:1px 6px;border-radius:8px}
+
+  /* ---------- Kirish ekrani: tizimga kirmaguncha panelning qolgan qismi ko'rinmaydi ---------- */
+  .gate{display:none}
+  body.locked{padding:0;max-width:none;display:block}
+  body.locked > *:not(.gate):not(.toasts){display:none !important}
+  body.locked .gate{
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+    position:fixed;inset:0;z-index:800;background:var(--bg);padding:20px 16px;overflow:auto;
+  }
+  .gate-card{
+    width:min(400px,100%);background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:28px 26px;display:flex;flex-direction:column;gap:18px;
+  }
+  .gate-brand{display:flex;gap:12px;align-items:center}
+  .gate-brand h1{font-size:17px;margin:0;font-weight:600}
+  .gate-brand p{margin:2px 0 0;font-size:12.5px;color:var(--text-dim)}
+  .gate-card h2{font-size:15px;margin:0;font-weight:600}
+  .gate-form{display:flex;flex-direction:column;gap:12px}
+  .gate-form .playbtn{justify-content:center;padding:11px 12px;font-size:13.5px;font-weight:600}
+  .gate-form .playbtn:disabled{cursor:wait}
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-brand">
+      <div class="bell-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div>
+        <h1>OIS School Bell</h1>
+        <p data-i18n="subtitle"></p>
+      </div>
+    </div>
+    <div id="gateBody"></div>
+  </div>
+  <div class="seg gate-lang" role="group" aria-label="Language">
+    <button type="button" data-lang="uz">UZ</button>
+    <button type="button" data-lang="ru">RU</button>
+    <button type="button" data-lang="en">EN</button>
+  </div>
+</div>
 
 <header>
   <div class="brand">
@@ -169,518 +446,1912 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </div>
     <div>
-      <h1>Oxford International School</h1>
-      <p>Qo'ng'iroq tizimi &mdash; local boshqaruv paneli</p>
+      <h1>OIS School Bell</h1>
+      <p data-i18n="subtitle"></p>
     </div>
   </div>
-  <div class="clock-block">
-    <div class="time mono" id="hdrTime">--:--:--</div>
-    <div class="date" id="hdrDate">&nbsp;</div>
-    <div class="live-pill" id="connPill"><span class="dot"></span><span id="connText">serverga ulanmoqda...</span></div>
+  <div class="header-side">
+    <div class="toolbar">
+      <div class="seg" id="langSeg" role="group" aria-label="Language">
+        <button type="button" data-lang="uz">UZ</button>
+        <button type="button" data-lang="ru">RU</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button type="button" class="icon-btn theme-btn" id="themeBtn">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+    </div>
+    <div class="clock-block">
+      <div class="time mono" id="hdrTime">--:--:--</div>
+      <div class="date" id="hdrDate">&nbsp;</div>
+      <div class="live-pill" id="connPill"><span class="dot"></span><span id="connText"></span></div>
+    </div>
   </div>
 </header>
 
-<div class="banner" id="banner">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-  <div><b>Bu &mdash; real boshqaruv paneli.</b> Bu yerda qilingan har bir o'zgarish to'g'ridan-to'g'ri <span class="mono">bell_system/config/schedule.json</span> fayliga yoziladi. Agar <span class="mono">bell_scheduler.py</span> boshqa terminalda ishlab turgan bo'lsa, o'zgarish bir daqiqa ichida unga ham ta'sir qiladi.</div>
-</div>
-
-<div class="modebar">
-  <div class="seg">
-    <button id="modeLive" class="active">Jonli vaqt</button>
-    <button id="modeSim">Vaqtni oldindan ko'rish</button>
-  </div>
-  <div class="simrow" id="simRow" hidden>
-    <input type="range" id="simSlider" min="0" max="1439" value="500">
-    <span class="simtime mono" id="simTimeLabel">--:--</span>
-    <button class="playbtn" id="simPlay">
-      <svg id="playIcon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      <span id="playLabel">O'ynash</span>
-    </button>
-  </div>
-  <button class="playbtn" id="announceBtn" style="margin-left:auto">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    <span id="announceLabel">Jonli e'lon</span>
-  </button>
-</div>
-
 <div class="hero">
   <div class="left">
-    <div class="eyebrow" id="heroEyebrow">Keyingi signal</div>
+    <div class="eyebrow" id="heroEyebrow"></div>
     <div class="label" id="heroLabel">&mdash;</div>
     <div class="sub" id="heroSub">&nbsp;</div>
-    <div class="daytype-badge" id="dtBadge"><span class="dot"></span><span id="dtBadgeText">&mdash;</span></div>
   </div>
   <div class="countdown">
     <div class="num mono" id="heroCountdown">--:--</div>
-    <div class="cap">qolgan vaqt</div>
+    <div class="cap" data-i18n="remaining"></div>
+    <button type="button" class="add-btn" id="openAddBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span data-i18n="addBig"></span>
+    </button>
   </div>
 </div>
 
 <div class="tabs">
-  <button class="tab active" data-tab="today">Bugun</button>
-  <button class="tab" data-tab="manage">Kun turlari va signallar</button>
-  <button class="tab" data-tab="log">Jurnal</button>
+  <button class="tab active" data-tab="today" data-i18n="tabToday"></button>
+  <button class="tab" data-tab="bells" data-i18n="tabBells"></button>
+  <button class="tab" data-tab="calendar" data-i18n="tabCal"></button>
+  <button class="tab" data-tab="log" data-i18n="tabLog"></button>
+  <button class="tab" data-tab="ai" data-i18n="tabAi"></button>
+  <button class="tab" data-tab="settings" data-i18n="tabSettings"></button>
 </div>
 
 <div class="tabpane" data-pane="today">
   <div class="panel">
-    <h2>Bugungi jadval <span class="count" id="tlCount"></span></h2>
+    <h2><span data-i18n="todayTitle"></span> <span class="count" id="tlCount"></span></h2>
     <div class="timeline" id="timeline"></div>
   </div>
 </div>
 
-<div class="tabpane" data-pane="manage" hidden>
+<div class="tabpane" data-pane="bells" hidden>
   <div class="panel">
-    <h2>Signallarni tahrirlash <span class="count">tanlangan kun turiga qo'shish / o'chirish</span></h2>
-    <div class="sig-editrow">
-      <label for="sigDayType">Kun turi:</label>
-      <select id="sigDayType"></select>
-    </div>
-    <div class="sig-list" id="sigList"></div>
+    <h2><span data-i18n="allTitle"></span> <span class="count" id="allCount"></span></h2>
+    <div class="bell-list" id="bellList"></div>
+  </div>
+</div>
 
-    <div class="sig-add-card">
-      <div class="sig-add-title">+ Yangi signal qo'shish (yuqorida tanlangan kun turiga)</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="sigTime">Vaqt</label>
-          <input type="time" id="sigTime" step="60">
-        </div>
-        <div class="field">
-          <label for="sigLabel">Nomi</label>
-          <input type="text" id="sigLabel" placeholder="masalan: 7-dars boshlanishi">
-        </div>
-        <div class="field">
-          <label for="sigSoundSelect">Ovoz fayli</label>
-          <div class="sound-row">
-            <select id="sigSoundSelect"></select>
-            <button type="button" class="icon-btn" id="sigPreviewBtn" title="Eshitib ko'rish">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-          </div>
-          <input type="text" id="sigSoundCustom" placeholder="fayl_nomi.mp3" hidden>
-        </div>
-        <button class="playbtn primary" id="sigAddBtn">+ Qo'shish</button>
+<div class="tabpane" data-pane="calendar" hidden>
+  <div class="panel">
+   <div class="cal-wrap">
+    <div class="cal-left">
+    <div class="cal-head">
+      <button type="button" class="icon-btn cal-nav" id="calPrev" aria-label="‹">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h2 id="calTitle"></h2>
+      <button type="button" class="icon-btn cal-nav" id="calNext" aria-label="›">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <span class="grow"></span>
+      <button type="button" class="playbtn" id="calTodayBtn" data-i18n="calToday"></button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i class="mk b"></i><span data-i18n="calLegBells"></span></span>
+      <span><i class="lg lg-pub"></i><span data-i18n="calLegPublic"></span></span>
+      <span><i class="lg lg-hol"></i><span data-i18n="calLegHoliday"></span></span>
+      <span><i class="mk e"></i><span data-i18n="calLegEvent"></span></span>
+    </div>
+    </div>
+
+    <!-- Tanlangan kun - kalendar yonida, pastga tushmasdan ko'rinadi -->
+    <div class="cal-right">
+      <h2><span id="calDayTitle"></span> <span class="count" id="calDayCount"></span></h2>
+      <div class="ai-note" id="calDayHoliday" hidden></div>
+      <div class="timeline" id="calDayList"></div>
+      <div class="ai-row">
+        <button type="button" class="playbtn primary" id="calAddEventBtn" data-i18n="calAddEvent"></button>
+        <button type="button" class="playbtn" id="calAddHolBtn" data-i18n="calAddHoliday"></button>
       </div>
     </div>
+   </div>
   </div>
 
-  <div class="panel">
-    <h2>Bugungi kunni belgilash <span class="count">bugungi sanaga</span></h2>
-    <div class="hint">Bosilgan kun turi faqat bugungi sanaga tayinlanadi.</div>
-    <div class="dt-list" id="dtList"></div>
-  </div>
+  <div class="cal-lists">
+    <div class="panel">
+      <h2><span data-i18n="holTitle"></span> <span class="count" id="holCount"></span></h2>
+      <div class="bell-list" id="holList"></div>
+      <div class="ai-row"><button type="button" class="playbtn" id="holAddBtn" data-i18n="holAddBtn"></button></div>
+      <label class="pub-toggle"><input type="checkbox" id="pubToggle"> <span data-i18n="pubToggle"></span></label>
+      <div class="pub-head" data-i18n="pubTitle"></div>
+      <div class="pub-list" id="pubList"></div>
+    </div>
 
-  <div class="panel">
-    <h2>Haftalik jadval <span class="count">doimiy tartib</span></h2>
-    <div class="week-grid" id="weekGrid"></div>
-  </div>
-
-  <div class="panel">
-    <h2>Jadval statistikasi</h2>
-    <div class="stats" id="stats"></div>
+    <div class="panel">
+      <h2><span data-i18n="evTitle"></span> <span class="count" id="evCount"></span></h2>
+      <div class="bell-list" id="evList"></div>
+    </div>
   </div>
 </div>
 
 <div class="tabpane" data-pane="log" hidden>
   <div class="panel">
-    <h2>Jurnal <span class="count" id="logCount">bell_scheduler.py dan real vaqtda</span></h2>
+    <h2><span data-i18n="logTitle"></span> <span class="count" data-i18n="logCount"></span></h2>
     <div class="log" id="logList"></div>
   </div>
 </div>
 
+<div class="tabpane" data-pane="ai" hidden>
+  <div class="panel">
+    <h2 data-i18n="aiTitle"></h2>
+    <div class="ai-note" id="aiConfNote" hidden></div>
+    <div class="field">
+      <label for="aiText" data-i18n="aiTextLabel"></label>
+      <textarea id="aiText" rows="5" maxlength="1500" data-i18n-ph="aiTextPh"></textarea>
+      <div class="ai-row">
+        <span class="fhint mono" id="aiCount">0 / 1500</span>
+        <span class="grow"></span>
+        <button type="button" class="playbtn" id="aiEnhanceBtn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17l.7 1.8L21.5 19.5l-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/></svg>
+          <span data-i18n="aiEnhanceBtn"></span>
+        </button>
+      </div>
+      <div class="ai-suggest" id="aiSuggest" hidden></div>
+    </div>
+
+    <div class="ai-sel-row">
+      <div class="field">
+        <label for="aiOpSel" data-i18n="aiOpsLabel"></label>
+        <div class="sound-row">
+          <select id="aiOpSel"></select>
+          <button type="button" class="icon-btn" id="aiOpPlay" data-i18n-title="aiSampleTitle"></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="aiToneSel" data-i18n="aiToneLabel"></label>
+        <select id="aiToneSel"></select>
+      </div>
+      <div class="field">
+        <label for="aiIntroSel" data-i18n="aiIntroLabel"></label>
+        <select id="aiIntroSel"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="aiRate" data-i18n="aiRateLabel"></label>
+      <div class="vol-row">
+        <span class="fhint" data-i18n="aiRateSlow"></span>
+        <input type="range" id="aiRate" min="-30" max="30" step="5" value="0">
+        <span class="fhint" data-i18n="aiRateFast"></span>
+        <span class="vol-val mono" id="aiRateVal">0%</span>
+      </div>
+    </div>
+
+    <div class="ai-row">
+      <button type="button" class="playbtn primary" id="aiGenBtn" data-i18n="aiGenBtn"></button>
+    </div>
+  </div>
+
+  <div class="panel" id="aiResult" hidden>
+    <h2 data-i18n="aiResultTitle"></h2>
+    <audio id="aiAudio" controls preload="auto"></audio>
+    <div class="field">
+      <label for="aiName" data-i18n="aiNameLabel"></label>
+      <div class="ai-row">
+        <input type="text" id="aiName" maxlength="200">
+        <button type="button" class="playbtn" id="aiSaveBtn" data-i18n="aiSaveBtn"></button>
+      </div>
+      <span class="fhint" data-i18n="aiSaveHint"></span>
+    </div>
+    <div class="field">
+      <label for="aiVol" data-i18n="aiPlayVol"></label>
+      <div class="ai-row">
+        <div class="vol-row ai-vol">
+          <input type="range" id="aiVol" min="5" max="100" step="5" value="100">
+          <span class="vol-val mono" id="aiVolVal">100%</span>
+        </div>
+        <button type="button" class="playbtn primary" id="aiPlayNowBtn" data-i18n="aiPlayNowBtn"></button>
+        <button type="button" class="playbtn live" id="aiStopBtn" data-i18n="aiStopBtn" hidden></button>
+      </div>
+      <span class="fhint" data-i18n="aiPlayHint"></span>
+    </div>
+  </div>
+</div>
+
+<div class="tabpane" data-pane="settings" hidden>
+  <div class="panel">
+    <h2 data-i18n="accTitle"></h2>
+    <div id="accountBody"></div>
+  </div>
+
+  <div class="panel">
+    <h2><span data-i18n="libTitle"></span> <span class="count" id="libCount"></span></h2>
+    <div class="lib-toolbar" id="libToolbar" hidden>
+      <label for="libKindSel" data-i18n="libKindNew"></label>
+      <select class="kind-sel" id="libKindSel"></select>
+      <span class="grow"></span>
+      <button type="button" class="playbtn primary" id="libUploadBtn" data-i18n="libUpload"></button>
+      <input type="file" id="libFileInput" accept=".mp3,.wav,audio/mpeg,audio/wav,audio/x-wav" multiple hidden>
+    </div>
+    <div class="lib-status" id="libStatus"></div>
+    <div class="lib-list" id="libList"></div>
+  </div>
+
+  <div class="panel" id="aiKeysPanel">
+    <h2 data-i18n="aiKeysTitle"></h2>
+    <ol class="ai-steps">
+      <li data-i18n-html="aiKeysStep1"></li>
+      <li data-i18n-html="aiKeysStep2"></li>
+      <li data-i18n-html="aiKeysStep3"></li>
+    </ol>
+    <div class="field">
+      <label for="aiKeyGemini"><span data-i18n="aiKeyGeminiLabel"></span> <span class="key-state" id="aiKeyStateGemini"></span></label>
+      <div class="ai-row">
+        <input type="password" id="aiKeyGemini" autocomplete="off" spellcheck="false" placeholder="AIza...">
+        <a class="playbtn" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" data-i18n="aiKeyGetBtn"></a>
+      </div>
+    </div>
+    <details class="ai-azure">
+      <summary data-i18n="aiAzureSummary"></summary>
+      <div class="field-row second">
+        <div class="field">
+          <label for="aiKeyAzure"><span data-i18n="aiKeyAzureLabel"></span> <span class="key-state" id="aiKeyStateAzure"></span></label>
+          <input type="password" id="aiKeyAzure" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="aiKeyRegion" data-i18n="aiKeyRegionLabel"></label>
+          <input type="text" id="aiKeyRegion" autocomplete="off" spellcheck="false" placeholder="westeurope">
+        </div>
+      </div>
+    </details>
+    <div class="ai-row">
+      <button type="button" class="playbtn primary" id="aiKeysSave" data-i18n="aiKeysSave"></button>
+      <span class="fhint" data-i18n="aiKeysPrivacy"></span>
+    </div>
+  </div>
+</div>
+
+<dialog class="modal" id="bellDialog">
+  <div class="modal-card" tabindex="-1">
+    <div class="modal-head">
+      <h2 data-i18n="addTitle"></h2>
+      <button type="button" class="modal-close" id="bellDialogClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="banner err" id="dlgError" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <div></div>
+    </div>
+  <div class="form-grid">
+    <!-- Faqat "bir martalik qo'ng'iroq" rejimida ko'rinadi -->
+    <div class="field" id="bellDateField" hidden>
+      <label for="bellDate" data-i18n="evDate"></label>
+      <input type="date" id="bellDate">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="bellTime" data-i18n="fieldTime"></label>
+        <div class="timepick" id="timePick">
+          <input type="text" id="bellTime" class="mono" readonly autocomplete="off" placeholder="--:--" aria-haspopup="listbox">
+          <svg class="tp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div class="tp-pop" id="timePop" hidden>
+            <div class="tp-heads"><span data-i18n="tpHour"></span><span></span><span data-i18n="tpMin"></span></div>
+            <div class="tp-wheels">
+              <div class="tp-band"></div>
+              <div class="tp-wheel" id="tpHours" role="listbox" tabindex="0"></div>
+              <div class="tp-sep">:</div>
+              <div class="tp-wheel" id="tpMins" role="listbox" tabindex="0"></div>
+            </div>
+            <button type="button" class="playbtn primary tp-ok" id="tpOk" data-i18n="okBtn"></button>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="bellLabel" data-i18n="fieldName"></label>
+        <input type="text" id="bellLabel" data-i18n-ph="namePh">
+      </div>
+      <div class="field">
+        <label for="bellSoundSelect" data-i18n="fieldSound"></label>
+        <div class="sound-row">
+          <select id="bellSoundSelect"></select>
+          <button type="button" class="icon-btn" id="bellPreviewBtn" data-i18n-title="previewTitle">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="link-btn" id="goLibraryBtn" data-i18n="soundAddHint"></button>
+
+    <div id="bellDaysBlock">
+      <div class="days-head">
+        <label data-i18n="fieldDays"></label>
+        <div class="presets">
+          <button type="button" class="preset" data-preset="work" data-i18n="presetWork"></button>
+          <button type="button" class="preset" data-preset="all" data-i18n="presetAll"></button>
+        </div>
+      </div>
+      <div class="chips" id="dayChips"></div>
+    </div>
+
+    <div class="field-row second">
+      <div class="field">
+        <label for="bellRings" data-i18n="fieldRings"></label>
+        <input type="number" id="bellRings" min="1" max="20" step="1" value="1">
+        <span class="fhint" data-i18n="ringsHint"></span>
+      </div>
+      <div class="field" id="bellWeeksField">
+        <label for="bellWeeks" data-i18n="fieldWeeks"></label>
+        <input type="number" id="bellWeeks" min="1" max="520" step="1" data-i18n-ph="weeksPh">
+        <span class="fhint" data-i18n="weeksHint"></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="bellVolume" data-i18n="fieldVolume"></label>
+      <div class="vol-row">
+        <svg class="vol-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/></svg>
+        <input type="range" id="bellVolume" min="5" max="100" step="5" value="100">
+        <svg class="vol-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+        <span class="vol-val mono" id="bellVolumeVal">100%</span>
+      </div>
+      <span class="fhint" data-i18n="volumeHint"></span>
+    </div>
+  </div>
+
+    <div class="modal-actions">
+      <button type="button" class="playbtn" id="bellCancelBtn" data-i18n="cancelBtn"></button>
+      <button type="button" class="playbtn primary" id="bellAddBtn" data-i18n="addBtn"></button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dam olish kuni / ta'til qo'shish -->
+<dialog class="modal ask" id="holDialog">
+  <div class="modal-card" tabindex="-1">
+    <div class="modal-head">
+      <h2 data-i18n="holDlgTitle"></h2>
+      <button type="button" class="modal-close" id="holClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="field">
+      <label for="holLabel" data-i18n="holLabel"></label>
+      <input type="text" id="holLabel" maxlength="200" data-i18n-ph="holLabelPh">
+    </div>
+    <div class="field-row second">
+      <div class="field">
+        <label for="holStart" data-i18n="holStart"></label>
+        <input type="date" id="holStart">
+      </div>
+      <div class="field">
+        <label for="holEnd" data-i18n="holEnd"></label>
+        <input type="date" id="holEnd">
+      </div>
+    </div>
+    <span class="fhint" data-i18n="holHint"></span>
+    <div class="modal-actions">
+      <button type="button" class="playbtn" id="holCancel" data-i18n="cancelBtn"></button>
+      <button type="button" class="playbtn primary" id="holSave" data-i18n="saveBtn"></button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Tasdiqlash / so'rash oynasi (brauzerning confirm() va prompt() o'rniga - hamma brauzerda ishlaydi) -->
+<dialog class="modal ask" id="askDialog">
+  <div class="modal-card" tabindex="-1">
+    <div class="ask-head">
+      <div class="ask-icon" id="askIcon"></div>
+      <h2 id="askTitle"></h2>
+    </div>
+    <div class="ask-text" id="askText"></div>
+    <div class="field" id="askField" hidden>
+      <input type="text" id="askInput" maxlength="200" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="playbtn" id="askCancel"></button>
+      <button type="button" class="playbtn primary" id="askOk"></button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<button type="button" class="fab" id="announceBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  <span class="fab-label" id="announceLabel"></span>
+</button>
+
 <audio id="previewAudio" hidden></audio>
 
-<footer>
-  1-bosqich: jadval asosidagi avtomatik zvonok &middot; server: <code>localhost:3000</code> &middot; fayl: <code>bell_system/config/schedule.json</code>
-</footer>
+<footer data-i18n-html="footer"></footer>
 
+<script src="/vendor/supabase.js"></script>
 <script>
 (function(){
   "use strict";
 
-  const DAY_TYPE_LABELS = {
-    oddiy:"Oddiy kun", qisqartirilgan:"Qisqartirilgan kun",
-    imtihon:"Imtihon kuni", bayram_oldi:"Bayram oldi kuni", sinov:"Sinov kuni"
+  // ---------- tarjimalar (uz / ru / en) ----------
+  const I18N = {
+    uz: {
+      subtitle: "Oxford International School · qo'ng'iroq boshqaruv paneli",
+      connWait: "serverga ulanmoqda...", connOn: "server bilan ulangan", connOff: "server bilan aloqa yo'q",
+      announce: "Jonli e'lon", announceOn: "Jonli e'lon ketmoqda... (to'xtatish)",
+      remaining: "qolgan vaqt",
+      tlPlaying: "chalinmoqda",
+      eyebrowNext: "Keyingi qo'ng'iroq", eyebrowNow: "Hozir chalinmoqda", eyebrowNone: "Qo'ng'iroq yo'q",
+      labelEmpty: "Hali qo'ng'iroq qo'shilmagan", labelNoUpcoming: "Yaqin kunlarda qo'ng'iroq yo'q",
+      tabToday: "Bugun", tabBells: "Qo'ng'iroqlar", tabLog: "Jurnal",
+      todayTitle: "Bugungi jadval",
+      nBells: "{n} ta qo'ng'iroq",
+      noBellsToday: "Bugun uchun qo'ng'iroq belgilanmagan.",
+      addTitle: "Yangi qo'ng'iroq qo'shish", addBig: "Qo'ng'iroq qo'shish", cancelBtn: "Bekor qilish", tpHour: "Soat", tpMin: "Daqiqa", okBtn: "Tayyor",
+      fieldTime: "Vaqt", fieldName: "Nomi (ixtiyoriy)", namePh: "masalan: 1-dars boshlanishi",
+      fieldSound: "Ovoz fayli", previewTitle: "Eshitib ko'rish",
+      soundAddHint: "+ Yangi ovoz qo'shish: Sozlamalar → Musiqalar", noAudio: "— ovoz yo'q —",
+      soundGroupLib: "Kutubxona", soundGroupLocal: "Kompyuterdagi fayllar",
+      tabSettings: "Sozlamalar", accTitle: "Akkaunt",
+      accNotConfigured: "Supabase sozlanmagan. <span class=\"mono\">bell_web/.env</span> faylini tekshiring.",
+      accNoLib: "Supabase kutubxonasini yuklab bo'lmadi (internet kerak). Qo'ng'iroqlar lokal nusxadan ishlayveradi.",
+      accNeedLogin: "Musiqalar kutubxonasini boshqarish uchun tizimga kiring.",
+      accEmail: "Email", accPassword: "Parol", accLoginBtn: "Kirish", accLogoutBtn: "Chiqish", accSignedIn: "Kirgan: {email}",
+      okLoggedOut: "<b>OK.</b> Tizimdan chiqdingiz.",
+      loginTitle: "Tizimga kirish",
+      accUsername: "Login",
+      errNotAdmin: "<b>Ruxsat yo'q:</b> bu akkaunt admin emas.",
+      errLoginNet: "<b>Xato:</b> Supabase bilan aloqa yo'q. Internetni tekshiring.",
+      errLogin: "<b>Xato:</b> login yoki parol noto'g'ri.",
+      libTitle: "Musiqalar", nFiles: "{n} ta fayl",
+      libKindNew: "Yangi fayllar turi:", libUpload: "Fayl yuklash",
+      libNeedLogin: "Ro'yxatni ko'rish va fayl yuklash uchun yuqoridagi akkauntga kiring.",
+      libEmpty: "Kutubxona bo'sh. MP3 yoki WAV fayl yuklang.",
+      kind_bell: "Qo'ng'iroq", kind_music: "Musiqa", kind_announcement: "E'lon",
+      libUploading: "Yuklanmoqda {i}/{n}: {name}",
+      okUploaded: "<b>OK.</b> {n} ta fayl yuklandi.",
+      errFileType: "{name}: faqat MP3 yoki WAV mumkin", errFileSize: "{name}: fayl juda katta (eng ko'pi 50 MB)",
+      libPlay: "Eshitish", libStop: "To'xtatish", libRename: "Nomini o'zgartirish", libRenamePrompt: "Yangi nom:", libDelete: "O'chirish",
+      libConfirmDelete: "<b>{name}</b> ovozini rostdan ham o'chirmoqchimisiz?",
+      libUsedWarn: "Diqqat: u {n} ta qo'ng'iroqda ishlatilmoqda!",
+      okSoundDeleted: "<b>OK.</b> Ovoz o'chirildi.",
+      libSyncOk: "Maktab kompyuterida saqlangan: {n} ta fayl", libSyncErr: "Sinxronlashda xato: {msg}", libSyncing: "Sinxronlanmoqda...",
+      fieldDays: "Hafta kunlari", presetWork: "Ish kunlari (Dush–Juma)", presetAll: "Har kuni",
+      fieldRings: "Ovoz necha marta chalinadi", ringsHint: "ketma-ket takrorlanadi",
+      fieldVolume: "Ovoz balandligi", volumeHint: "▶ tugmasi bilan shu balandlikda eshitib ko'rish mumkin",
+      volumeTitle: "Ovoz balandligi: {n}%",
+      fieldWeeks: "Necha hafta takrorlanadi", weeksPh: "doimiy", weeksHint: "bo'sh qoldirsangiz — doimiy takrorlanadi",
+      addBtn: "Qo'shish",
+      allTitle: "Barcha qo'ng'iroqlar", noBells: "Hali qo'ng'iroq qo'shilmagan.",
+      delTitle: "O'chirish",
+      confirmDelete: "<b>{time} — {label}</b> qo'ng'irog'ini rostdan ham o'chirmoqchimisiz?",
+      delBellTitle: "Qo'ng'iroqni o'chirish", delSoundTitle: "Ovozni o'chirish", renameTitle: "Nomini o'zgartirish",
+      delBtn: "Ha, o'chirish", cannotUndo: "Buni ortga qaytarib bo'lmaydi.",
+      ringsTitle: "Ovoz {n} marta ketma-ket chalinadi",
+      weeksForever: "Doimiy", weeksLimited: "{n} hafta · {date} gacha", weeksExpired: "Muddati tugagan ({date})",
+      logTitle: "Jurnal", logCount: "bell_scheduler.py dan real vaqtda",
+      logEmpty: "Hali hech narsa qayd etilmagan. bell_scheduler.py ishga tushib, birinchi qo'ng'iroq chalinganda shu yerda ko'rinadi.",
+      footer: "server: <code>localhost:3000</code> &middot; fayl: <code>bell_system/config/schedule.json</code>",
+      themeToLight: "Yorug' rejimga o'tish", themeToDark: "Qorong'i rejimga o'tish",
+      okAdded: "<b>OK.</b> Yangi qo'ng'iroq ({time}) qo'shildi.",
+      okUpdated: "<b>OK.</b> Qo'ng'iroq ({time}) saqlandi.",
+      tabCal: "Kalendar", calToday: "Bugun",
+      calLegBells: "qo'ng'iroqlar bor", calLegPublic: "davlat bayrami",
+      calPublicNote: "<b>{label}</b> - davlat bayrami. Jadvaldagi qo'ng'iroqlar chalinmaydi (bir martaliklar chalinadi).",
+      calApprox: "Sana taxminiy - rasmiy e'lon qilingach tekshiring (kerak bo'lsa o'zingiz dam olish kuni qo'shing).",
+      approxTag: "taxminiy", pubToggle: "Davlat bayramlarida jadvaldagi qo'ng'iroqlar chalinmasin",
+      pubTitle: "Keyingi davlat bayramlari",
+      okPubOn: "<b>OK.</b> Davlat bayramlarida qo'ng'iroqlar chalinmaydi.", okPubOff: "<b>OK.</b> Davlat bayramlari hisobga olinmaydi - qo'ng'iroqlar odatdagidek chalinadi.", calLegHoliday: "dam olish kuni / ta'til", calLegEvent: "bir martalik qo'ng'iroq",
+      calNoBells: "Bu kunga qo'ng'iroq yo'q.", calAddEvent: "+ Shu kunga bir martalik qo'ng'iroq", calAddHoliday: "Dam olish kuni deb belgilash",
+      calHolidayNote: "<b>{label}</b> - dam olish kuni. Jadvaldagi qo'ng'iroqlar chalinmaydi (bir martaliklar chalinadi).",
+      holTitle: "Dam olish kunlari va ta'tillar", holAddBtn: "+ Dam olish kuni / ta'til qo'shish", holEmpty: "Hozircha belgilanmagan.",
+      holDlgTitle: "Dam olish kuni / ta'til", holLabel: "Nomi", holLabelPh: "masalan: Qishki ta'til", holStart: "Boshlanishi", holEnd: "Tugashi (shu kun ham)",
+      holHint: "Shu kunlari jadvaldagi qo'ng'iroqlar chalinmaydi. Bir martalik qo'ng'iroqlar esa chalinaveradi.", holDays: "{n} kun",
+      delHolTitle: "Dam olish kunini o'chirish", confirmDelHol: "<b>{label}</b> ({range}) ni o'chirmoqchimisiz? Shu kunlari qo'ng'iroqlar yana chalinadi.",
+      okHolAdded: "<b>OK.</b> Dam olish kuni qo'shildi.", okHolDeleted: "<b>OK.</b> Dam olish kuni o'chirildi.",
+      evTitle: "Bir martalik qo'ng'iroqlar", evEmpty: "Hozircha yo'q. Kalendarda kunni tanlab qo'shing.",
+      evDlgTitle: "Bir martalik qo'ng'iroq qo'shish", evDate: "Sana",
+      delEvTitle: "Bir martalik qo'ng'iroqni o'chirish", confirmDelEv: "<b>{date} {time} - {label}</b> ni o'chirmoqchimisiz?",
+      okEvAdded: "<b>OK.</b> Bir martalik qo'ng'iroq ({date} {time}) qo'shildi.", okEvDeleted: "<b>OK.</b> Bir martalik qo'ng'iroq o'chirildi.",
+      oneTimeTag: "bir martalik", todayHoliday: "<b>Bugun dam olish kuni: {label}.</b> Jadvaldagi qo'ng'iroqlar chalinmaydi.",
+      errPickDate: "<b>Xato:</b> sanani tanlang.", errHolDates: "<b>Xato:</b> boshlanish va tugash sanasini tanlang.",
+      monthsNom: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"],
+      tabAi: "AI e'lon", aiTitle: "AI bilan ovozli e'lon yaratish",
+      aiTextLabel: "E'lon matni", aiTextPh: "Masalan: ertaga soat 9 da faollar zalida ota-onalar yig'ilishi bo'ladi",
+      aiEnhanceBtn: "Matnni yaxshilash", aiEnhancing: "Yaxshilanmoqda...",
+      aiSugHead: "Gemini variantlari - birini bosing, matn o'rniga qo'yiladi:",
+      aiOpsLabel: "Diktor (ovoz)", aiToneLabel: "Ohang", aiSampleTitle: "Namunani eshitish",
+      aiOpsFemale: "Ayol ovozlari", aiOpsMale: "Erkak ovozlari",
+      aiTone_polite: "Muloyim va iliq", aiTone_official: "Rasmiy", aiTone_festive: "Tantanali, bayramona",
+      aiTone_important: "Muhim - diqqat!", aiTone_soft: "Yumshoq, osoyishta",
+      aiIntroLabel: "Boshida signal", aiIntroNone: "Signalsiz",
+      aiIntroGroupLib: "Yuklagan fayllaringiz (birinchi 12 soniya)",
+      aiRateLabel: "Gapirish tezligi", aiRateSlow: "sekin", aiRateFast: "tez",
+      aiGenBtn: "Ovoz yaratish", aiGenerating: "Ovoz yaratilmoqda...",
+      aiResultTitle: "Tayyor e'lon", aiNameLabel: "Kutubxonadagi nomi",
+      aiSaveBtn: "Kutubxonaga saqlash", aiSaving: "Saqlanmoqda...",
+      aiSaveHint: "\"E'lon\" turi bilan saqlanadi - keyin uni istalgan qo'ng'iroqqa ovoz fayli qilib qo'yish mumkin.",
+      aiPlayVol: "Hozir chalish balandligi", aiPlayNowBtn: "Hozir dinamikdan chalish", aiStopBtn: "To'xtatish",
+      aiPlayHint: "Maktab kompyuterining dinamiklaridan (qo'ng'iroqlar chalinadigan joydan) chalinadi.",
+      aiDefaultName: "E'lon",
+      aiNeedText: "<b>Xato:</b> avval e'lon matnini yozing.",
+      aiConfTts: "<b>Ovoz yaratish hali sozlanmagan.</b> Sozlamalar → «AI kalitlari» bo'limiga Gemini kalitini qo'ying (3 ta oddiy qadam).",
+      aiGoKeys: "→ AI kalitlarini ochish",
+      aiConfEnh: "<b>Matnni yaxshilash hali sozlanmagan.</b> Buning uchun ham o'sha Gemini kaliti kerak.",
+      aiKeysTitle: "AI kalitlari",
+      aiKeysStep1: "<a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a> sahifasini oching (yoki pastdagi <b>«Kalit olish»</b> tugmasini bosing).",
+      aiKeysStep2: "<b>«Create API key»</b> tugmasini bosing, chiqqan kalitni <b>«Copy»</b> bilan nusxalang.",
+      aiKeysStep3: "Kalitni pastdagi maydonga qo'ying (Ctrl+V) va <b>«Saqlash»</b> ni bosing. Tamom.",
+      aiKeyGeminiLabel: "Gemini API kaliti", aiKeyGetBtn: "Kalit olish",
+      aiAzureSummary: "Azure (ixtiyoriy) - eng sifatli o'zbekcha ovoz uchun",
+      aiKeyAzureLabel: "Azure Speech kaliti", aiKeyRegionLabel: "Azure hududi (region)",
+      aiKeysSave: "Saqlash", aiKeysPrivacy: "Kalit faqat shu kompyuterda saqlanadi va hech qayerda ko'rsatilmaydi.",
+      aiKeySet: "✓ saqlangan", aiKeyMissing: "· kiritilmagan",
+      okAiKeys: "<b>OK.</b> Kalit saqlandi - endi ovoz yaratishingiz mumkin.",
+      errAiKeysEmpty: "<b>Xato:</b> avval kalitni maydonga qo'ying.",
+      aiIntroFail: "<b>Diqqat:</b> signal faylini o'qib bo'lmadi - e'lon signalsiz yaratildi.",
+      okAiGenerated: "<b>OK.</b> E'lon tayyor - eshitib ko'ring.",
+      okAiPlaying: "<b>OK.</b> E'lon dinamikdan chalinmoqda.",
+      editTitle: "Qo'ng'iroqni tahrirlash", saveBtn: "Saqlash", editTitleBtn: "Tahrirlash",
+      okDeleted: "<b>OK.</b> Qo'ng'iroq o'chirildi.",
+      errMsg: "<b>Xato:</b> {msg}",
+      errPickSoundFirst: "<b>Xato:</b> avval ovoz faylini tanlang.",
+      errPlay: "<b>Xato:</b> \"{sound}\" faylini eshittirib bo'lmadi.",
+      errPickTime: "<b>Xato:</b> vaqtni tanlang.",
+      errPickDays: "<b>Xato:</b> kamida bitta hafta kunini tanlang.",
+      errPickSound: "<b>Xato:</b> ovoz faylini tanlang yoki kompyuterdan yuklang.",
+      errRings: "<b>Xato:</b> takrorlanish soni kamida 1 bo'lishi kerak.",
+      errWeeks: "<b>Xato:</b> hafta soni kamida 1 bo'lishi kerak (yoki bo'sh qoldiring).",
+      annErr: "<b>Jonli e'lon xatosi:</b> {msg}",
+      annStarted: "<b>Jonli e'lon boshlandi.</b> Mikrofoningizga gapiring - ovoz shu kompyuterga ulangan speakerlardan eshitiladi.",
+      annStopped: "<b>Jonli e'lon to'xtatildi.</b>",
+      dateFmt: "{d} {m}, {w}",
+      wdShort: ["Dush","Sesh","Chor","Pay","Jum","Shan","Yak"],
+      wdFull: ["Dushanba","Seshanba","Chorshanba","Payshanba","Juma","Shanba","Yakshanba"],
+      months: ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"]
+    },
+    ru: {
+      subtitle: "Oxford International School · панель управления звонками",
+      connWait: "подключение к серверу...", connOn: "связь с сервером есть", connOff: "нет связи с сервером",
+      announce: "Живое объявление", announceOn: "Идёт живое объявление... (остановить)",
+      remaining: "осталось",
+      tlPlaying: "играет",
+      eyebrowNext: "Следующий звонок", eyebrowNow: "Звучит сейчас", eyebrowNone: "Звонков нет",
+      labelEmpty: "Звонки ещё не добавлены", labelNoUpcoming: "В ближайшие дни звонков нет",
+      tabToday: "Сегодня", tabBells: "Звонки", tabLog: "Журнал",
+      todayTitle: "Расписание на сегодня",
+      nBells: ["{n} звонок", "{n} звонка", "{n} звонков"],
+      noBellsToday: "На сегодня звонки не назначены.",
+      addTitle: "Добавить новый звонок", addBig: "Добавить звонок", cancelBtn: "Отмена", tpHour: "Ч", tpMin: "М", okBtn: "Готово",
+      fieldTime: "Время", fieldName: "Название (необязательно)", namePh: "например: начало 1-го урока",
+      fieldSound: "Звуковой файл", previewTitle: "Прослушать",
+      soundAddHint: "+ Добавить звук: Настройки → Музыка", noAudio: "— нет звуков —",
+      soundGroupLib: "Библиотека", soundGroupLocal: "Файлы на компьютере",
+      tabSettings: "Настройки", accTitle: "Аккаунт",
+      accNotConfigured: "Supabase не настроен. Проверьте файл <span class=\"mono\">bell_web/.env</span>.",
+      accNoLib: "Не удалось загрузить библиотеку Supabase (нужен интернет). Звонки продолжат работать с локальных копий.",
+      accNeedLogin: "Войдите, чтобы управлять музыкальной библиотекой.",
+      accEmail: "Email", accPassword: "Пароль", accLoginBtn: "Войти", accLogoutBtn: "Выйти", accSignedIn: "Вход выполнен: {email}",
+      okLoggedOut: "<b>OK.</b> Вы вышли из системы.",
+      loginTitle: "Вход в систему",
+      accUsername: "Логин",
+      errNotAdmin: "<b>Нет доступа:</b> этот аккаунт не является администратором.",
+      errLoginNet: "<b>Ошибка:</b> нет связи с Supabase. Проверьте интернет.",
+      errLogin: "<b>Ошибка:</b> неверный логин или пароль.",
+      libTitle: "Музыка", nFiles: ["{n} файл", "{n} файла", "{n} файлов"],
+      libKindNew: "Тип новых файлов:", libUpload: "Загрузить файл",
+      libNeedLogin: "Войдите в аккаунт выше, чтобы видеть список и загружать файлы.",
+      libEmpty: "Библиотека пуста. Загрузите файл MP3 или WAV.",
+      kind_bell: "Звонок", kind_music: "Музыка", kind_announcement: "Объявление",
+      libUploading: "Загрузка {i}/{n}: {name}",
+      okUploaded: "<b>OK.</b> Загружено файлов: {n}.",
+      errFileType: "{name}: допустимы только MP3 или WAV", errFileSize: "{name}: файл слишком большой (максимум 50 МБ)",
+      libPlay: "Прослушать", libStop: "Остановить", libRename: "Переименовать", libRenamePrompt: "Новое название:", libDelete: "Удалить",
+      libConfirmDelete: "Вы действительно хотите удалить звук <b>{name}</b>?",
+      libUsedWarn: "Внимание: он используется в звонках: {n}!",
+      okSoundDeleted: "<b>OK.</b> Звук удалён.",
+      libSyncOk: "Сохранено на школьном компьютере: {n}", libSyncErr: "Ошибка синхронизации: {msg}", libSyncing: "Синхронизация...",
+      fieldDays: "Дни недели", presetWork: "Будни (Пн–Пт)", presetAll: "Каждый день",
+      fieldRings: "Сколько раз звучит звук", ringsHint: "повторяется подряд",
+      fieldVolume: "Громкость", volumeHint: "кнопкой ▶ можно прослушать с этой громкостью",
+      volumeTitle: "Громкость: {n}%",
+      fieldWeeks: "Сколько недель повторять", weeksPh: "постоянно", weeksHint: "если оставить пустым — повторяется постоянно",
+      addBtn: "Добавить",
+      allTitle: "Все звонки", noBells: "Звонки ещё не добавлены.",
+      delTitle: "Удалить",
+      confirmDelete: "Вы действительно хотите удалить звонок <b>{time} — {label}</b>?",
+      delBellTitle: "Удаление звонка", delSoundTitle: "Удаление звука", renameTitle: "Переименование",
+      delBtn: "Да, удалить", cannotUndo: "Это действие нельзя отменить.",
+      ringsTitle: "Звук повторяется подряд: {n}",
+      weeksForever: "Постоянно", weeksLimited: "{n} нед. · до {date}", weeksExpired: "Срок истёк ({date})",
+      logTitle: "Журнал", logCount: "в реальном времени от bell_scheduler.py",
+      logEmpty: "Пока ничего не записано. Как только bell_scheduler.py запустится и прозвучит первый звонок, запись появится здесь.",
+      footer: "сервер: <code>localhost:3000</code> &middot; файл: <code>bell_system/config/schedule.json</code>",
+      themeToLight: "Переключить на светлую тему", themeToDark: "Переключить на тёмную тему",
+      okAdded: "<b>OK.</b> Новый звонок ({time}) добавлен.",
+      okUpdated: "<b>OK.</b> Звонок ({time}) сохранён.",
+      tabCal: "Календарь", calToday: "Сегодня",
+      calLegBells: "есть звонки", calLegPublic: "государственный праздник",
+      calPublicNote: "<b>{label}</b> - государственный праздник. Звонки по расписанию не звучат (разовые звучат).",
+      calApprox: "Дата примерная - проверьте после официального объявления (при необходимости добавьте выходной сами).",
+      approxTag: "примерно", pubToggle: "В государственные праздники звонки по расписанию не звучат",
+      pubTitle: "Ближайшие государственные праздники",
+      okPubOn: "<b>OK.</b> В государственные праздники звонки не звучат.", okPubOff: "<b>OK.</b> Государственные праздники не учитываются - звонки звучат как обычно.", calLegHoliday: "выходной / каникулы", calLegEvent: "разовый звонок",
+      calNoBells: "На этот день звонков нет.", calAddEvent: "+ Разовый звонок на этот день", calAddHoliday: "Отметить как выходной",
+      calHolidayNote: "<b>{label}</b> - выходной. Звонки по расписанию не звучат (разовые звучат).",
+      holTitle: "Выходные и каникулы", holAddBtn: "+ Добавить выходной / каникулы", holEmpty: "Пока не отмечено.",
+      holDlgTitle: "Выходной / каникулы", holLabel: "Название", holLabelPh: "например: Зимние каникулы", holStart: "Начало", holEnd: "Конец (включительно)",
+      holHint: "В эти дни звонки по расписанию не звучат. Разовые звонки звучат как обычно.", holDays: "дней: {n}",
+      delHolTitle: "Удаление выходного", confirmDelHol: "Удалить <b>{label}</b> ({range})? В эти дни звонки снова будут звучать.",
+      okHolAdded: "<b>OK.</b> Выходной добавлен.", okHolDeleted: "<b>OK.</b> Выходной удалён.",
+      evTitle: "Разовые звонки", evEmpty: "Пока нет. Выберите день в календаре и добавьте.",
+      evDlgTitle: "Добавить разовый звонок", evDate: "Дата",
+      delEvTitle: "Удаление разового звонка", confirmDelEv: "Удалить <b>{date} {time} - {label}</b>?",
+      okEvAdded: "<b>OK.</b> Разовый звонок ({date} {time}) добавлен.", okEvDeleted: "<b>OK.</b> Разовый звонок удалён.",
+      oneTimeTag: "разовый", todayHoliday: "<b>Сегодня выходной: {label}.</b> Звонки по расписанию не звучат.",
+      errPickDate: "<b>Ошибка:</b> выберите дату.", errHolDates: "<b>Ошибка:</b> выберите даты начала и конца.",
+      monthsNom: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+      tabAi: "ИИ-объявление", aiTitle: "Создать голосовое объявление с ИИ",
+      aiTextLabel: "Текст объявления", aiTextPh: "Например: завтра в 9:00 в актовом зале родительское собрание",
+      aiEnhanceBtn: "Улучшить текст", aiEnhancing: "Улучшаем...",
+      aiSugHead: "Варианты от Gemini - нажмите, чтобы подставить:",
+      aiOpsLabel: "Диктор (голос)", aiToneLabel: "Тон", aiSampleTitle: "Прослушать образец",
+      aiOpsFemale: "Женские голоса", aiOpsMale: "Мужские голоса",
+      aiTone_polite: "Вежливый и тёплый", aiTone_official: "Официальный", aiTone_festive: "Торжественный, праздничный",
+      aiTone_important: "Важно - внимание!", aiTone_soft: "Мягкий, спокойный",
+      aiIntroLabel: "Сигнал в начале", aiIntroNone: "Без сигнала",
+      aiIntroGroupLib: "Ваши загруженные файлы (первые 12 секунд)",
+      aiRateLabel: "Скорость речи", aiRateSlow: "медленно", aiRateFast: "быстро",
+      aiGenBtn: "Создать озвучку", aiGenerating: "Создаём озвучку...",
+      aiResultTitle: "Готовое объявление", aiNameLabel: "Название в библиотеке",
+      aiSaveBtn: "Сохранить в библиотеку", aiSaving: "Сохраняем...",
+      aiSaveHint: "Сохраняется с типом \"Объявление\" - затем его можно выбрать звуком для любого звонка.",
+      aiPlayVol: "Громкость воспроизведения", aiPlayNowBtn: "Воспроизвести сейчас в динамиках", aiStopBtn: "Остановить",
+      aiPlayHint: "Звучит из динамиков школьного компьютера (там же, где звонки).",
+      aiDefaultName: "Объявление",
+      aiNeedText: "<b>Ошибка:</b> сначала введите текст объявления.",
+      aiConfTts: "<b>Озвучка пока не настроена.</b> Вставьте ключ Gemini в раздел Настройки → «Ключи ИИ» (3 простых шага).",
+      aiGoKeys: "→ Открыть ключи ИИ",
+      aiConfEnh: "<b>Улучшение текста пока не настроено.</b> Для него нужен тот же ключ Gemini.",
+      aiKeysTitle: "Ключи ИИ",
+      aiKeysStep1: "Откройте <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a> (или нажмите кнопку <b>«Получить ключ»</b> ниже).",
+      aiKeysStep2: "Нажмите <b>«Create API key»</b> и скопируйте ключ кнопкой <b>«Copy»</b>.",
+      aiKeysStep3: "Вставьте ключ в поле ниже (Ctrl+V) и нажмите <b>«Сохранить»</b>. Готово.",
+      aiKeyGeminiLabel: "Ключ Gemini API", aiKeyGetBtn: "Получить ключ",
+      aiAzureSummary: "Azure (необязательно) - для самого качественного узбекского голоса",
+      aiKeyAzureLabel: "Ключ Azure Speech", aiKeyRegionLabel: "Регион Azure",
+      aiKeysSave: "Сохранить", aiKeysPrivacy: "Ключ хранится только на этом компьютере и нигде не показывается.",
+      aiKeySet: "✓ сохранён", aiKeyMissing: "· не указан",
+      okAiKeys: "<b>OK.</b> Ключ сохранён - теперь можно создавать озвучку.",
+      errAiKeysEmpty: "<b>Ошибка:</b> сначала вставьте ключ в поле.",
+      aiIntroFail: "<b>Внимание:</b> не удалось прочитать файл сигнала - объявление создано без сигнала.",
+      okAiGenerated: "<b>OK.</b> Объявление готово - прослушайте его.",
+      okAiPlaying: "<b>OK.</b> Объявление звучит в динамиках.",
+      editTitle: "Редактировать звонок", saveBtn: "Сохранить", editTitleBtn: "Редактировать",
+      okDeleted: "<b>OK.</b> Звонок удалён.",
+      errMsg: "<b>Ошибка:</b> {msg}",
+      errPickSoundFirst: "<b>Ошибка:</b> сначала выберите звуковой файл.",
+      errPlay: "<b>Ошибка:</b> не удалось воспроизвести файл «{sound}».",
+      errPickTime: "<b>Ошибка:</b> выберите время.",
+      errPickDays: "<b>Ошибка:</b> выберите хотя бы один день недели.",
+      errPickSound: "<b>Ошибка:</b> выберите звуковой файл или загрузите его с компьютера.",
+      errRings: "<b>Ошибка:</b> число повторов должно быть не меньше 1.",
+      errWeeks: "<b>Ошибка:</b> число недель должно быть не меньше 1 (или оставьте поле пустым).",
+      annErr: "<b>Ошибка живого объявления:</b> {msg}",
+      annStarted: "<b>Живое объявление началось.</b> Говорите в микрофон — звук будет слышен из колонок, подключённых к этому компьютеру.",
+      annStopped: "<b>Живое объявление остановлено.</b>",
+      dateFmt: "{d} {m}, {w}",
+      wdShort: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],
+      wdFull: ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"],
+      months: ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"]
+    },
+    en: {
+      subtitle: "Oxford International School · bell control panel",
+      connWait: "connecting to server...", connOn: "connected to server", connOff: "no connection to server",
+      announce: "Live announcement", announceOn: "Live announcement in progress... (stop)",
+      remaining: "remaining",
+      tlPlaying: "playing",
+      eyebrowNext: "Next bell", eyebrowNow: "Ringing now", eyebrowNone: "No bells",
+      labelEmpty: "No bells added yet", labelNoUpcoming: "No bells in the coming days",
+      tabToday: "Today", tabBells: "Bells", tabLog: "Log",
+      todayTitle: "Today's schedule",
+      nBells: ["{n} bell", "{n} bells"],
+      noBellsToday: "No bells are scheduled for today.",
+      addTitle: "Add a new bell", addBig: "Add a bell", cancelBtn: "Cancel", tpHour: "H", tpMin: "M", okBtn: "Done",
+      fieldTime: "Time", fieldName: "Name (optional)", namePh: "e.g. start of lesson 1",
+      fieldSound: "Sound file", previewTitle: "Preview",
+      soundAddHint: "+ Add a new sound: Settings → Music", noAudio: "— no sounds —",
+      soundGroupLib: "Library", soundGroupLocal: "Files on this computer",
+      tabSettings: "Settings", accTitle: "Account",
+      accNotConfigured: "Supabase is not configured. Check <span class=\"mono\">bell_web/.env</span>.",
+      accNoLib: "Could not load the Supabase library (internet required). Bells keep working from local copies.",
+      accNeedLogin: "Sign in to manage the music library.",
+      accEmail: "Email", accPassword: "Password", accLoginBtn: "Sign in", accLogoutBtn: "Sign out", accSignedIn: "Signed in: {email}",
+      okLoggedOut: "<b>OK.</b> You have signed out.",
+      loginTitle: "Sign in",
+      accUsername: "Username",
+      errNotAdmin: "<b>No access:</b> this account is not an admin.",
+      errLoginNet: "<b>Error:</b> cannot reach Supabase. Check your internet connection.",
+      errLogin: "<b>Error:</b> wrong username or password.",
+      libTitle: "Music", nFiles: ["{n} file", "{n} files"],
+      libKindNew: "Type of new files:", libUpload: "Upload files",
+      libNeedLogin: "Sign in to the account above to see the list and upload files.",
+      libEmpty: "The library is empty. Upload an MP3 or WAV file.",
+      kind_bell: "Bell", kind_music: "Music", kind_announcement: "Announcement",
+      libUploading: "Uploading {i}/{n}: {name}",
+      okUploaded: "<b>OK.</b> Uploaded files: {n}.",
+      errFileType: "{name}: only MP3 or WAV allowed", errFileSize: "{name}: file is too large (50 MB max)",
+      libPlay: "Preview", libStop: "Stop", libRename: "Rename", libRenamePrompt: "New name:", libDelete: "Delete",
+      libConfirmDelete: "Do you really want to delete the sound <b>{name}</b>?",
+      libUsedWarn: "Warning: it is used by {n} bell(s)!",
+      okSoundDeleted: "<b>OK.</b> Sound deleted.",
+      libSyncOk: "Stored on the school computer: {n}", libSyncErr: "Sync error: {msg}", libSyncing: "Syncing...",
+      fieldDays: "Days of the week", presetWork: "Weekdays (Mon–Fri)", presetAll: "Every day",
+      fieldRings: "How many times the sound plays", ringsHint: "repeats back to back",
+      fieldVolume: "Volume", volumeHint: "press ▶ to preview at this volume",
+      volumeTitle: "Volume: {n}%",
+      fieldWeeks: "Repeat for how many weeks", weeksPh: "ongoing", weeksHint: "leave empty to repeat indefinitely",
+      addBtn: "Add",
+      allTitle: "All bells", noBells: "No bells added yet.",
+      delTitle: "Delete",
+      confirmDelete: "Do you really want to delete the bell <b>{time} — {label}</b>?",
+      delBellTitle: "Delete bell", delSoundTitle: "Delete sound", renameTitle: "Rename",
+      delBtn: "Yes, delete", cannotUndo: "This cannot be undone.",
+      ringsTitle: "Sound plays {n} time(s) in a row",
+      weeksForever: "Ongoing", weeksLimited: "{n} wk · until {date}", weeksExpired: "Expired ({date})",
+      logTitle: "Log", logCount: "live from bell_scheduler.py",
+      logEmpty: "Nothing has been logged yet. Once bell_scheduler.py is running and the first bell rings, it will show up here.",
+      footer: "server: <code>localhost:3000</code> &middot; file: <code>bell_system/config/schedule.json</code>",
+      themeToLight: "Switch to light mode", themeToDark: "Switch to dark mode",
+      okAdded: "<b>OK.</b> New bell ({time}) added.",
+      okUpdated: "<b>OK.</b> Bell ({time}) saved.",
+      tabCal: "Calendar", calToday: "Today",
+      calLegBells: "has bells", calLegPublic: "public holiday",
+      calPublicNote: "<b>{label}</b> - public holiday. Scheduled bells do not ring (one-time bells do).",
+      calApprox: "Approximate date - check once it is officially announced (add a day off yourself if needed).",
+      approxTag: "approx.", pubToggle: "Do not ring scheduled bells on public holidays",
+      pubTitle: "Upcoming public holidays",
+      okPubOn: "<b>OK.</b> Bells will not ring on public holidays.", okPubOff: "<b>OK.</b> Public holidays are ignored - bells ring as usual.", calLegHoliday: "day off / holiday", calLegEvent: "one-time bell",
+      calNoBells: "No bells on this day.", calAddEvent: "+ One-time bell on this day", calAddHoliday: "Mark as a day off",
+      calHolidayNote: "<b>{label}</b> - day off. Scheduled bells do not ring (one-time bells do).",
+      holTitle: "Days off and holidays", holAddBtn: "+ Add a day off / holiday", holEmpty: "Nothing marked yet.",
+      holDlgTitle: "Day off / holiday", holLabel: "Name", holLabelPh: "e.g. Winter break", holStart: "Start", holEnd: "End (inclusive)",
+      holHint: "Scheduled bells do not ring on these days. One-time bells still ring.", holDays: "{n} days",
+      delHolTitle: "Delete day off", confirmDelHol: "Delete <b>{label}</b> ({range})? Bells will ring on these days again.",
+      okHolAdded: "<b>OK.</b> Day off added.", okHolDeleted: "<b>OK.</b> Day off deleted.",
+      evTitle: "One-time bells", evEmpty: "None yet. Pick a day in the calendar to add one.",
+      evDlgTitle: "Add a one-time bell", evDate: "Date",
+      delEvTitle: "Delete one-time bell", confirmDelEv: "Delete <b>{date} {time} - {label}</b>?",
+      okEvAdded: "<b>OK.</b> One-time bell ({date} {time}) added.", okEvDeleted: "<b>OK.</b> One-time bell deleted.",
+      oneTimeTag: "one-time", todayHoliday: "<b>Today is a day off: {label}.</b> Scheduled bells do not ring.",
+      errPickDate: "<b>Error:</b> pick a date.", errHolDates: "<b>Error:</b> pick the start and end dates.",
+      monthsNom: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+      tabAi: "AI announcement", aiTitle: "Create a voice announcement with AI",
+      aiTextLabel: "Announcement text", aiTextPh: "E.g.: parents' meeting tomorrow at 9:00 in the assembly hall",
+      aiEnhanceBtn: "Improve text", aiEnhancing: "Improving...",
+      aiSugHead: "Gemini versions - click one to use it:",
+      aiOpsLabel: "Announcer (voice)", aiToneLabel: "Tone", aiSampleTitle: "Play a sample",
+      aiOpsFemale: "Female voices", aiOpsMale: "Male voices",
+      aiTone_polite: "Polite and warm", aiTone_official: "Official", aiTone_festive: "Festive, celebratory",
+      aiTone_important: "Important - attention!", aiTone_soft: "Soft, calm",
+      aiIntroLabel: "Intro chime", aiIntroNone: "No chime",
+      aiIntroGroupLib: "Your uploaded files (first 12 seconds)",
+      aiRateLabel: "Speaking rate", aiRateSlow: "slow", aiRateFast: "fast",
+      aiGenBtn: "Generate voice", aiGenerating: "Generating...",
+      aiResultTitle: "Your announcement", aiNameLabel: "Name in library",
+      aiSaveBtn: "Save to library", aiSaving: "Saving...",
+      aiSaveHint: "Saved with the \"Announcement\" type - you can then pick it as the sound of any bell.",
+      aiPlayVol: "Playback volume", aiPlayNowBtn: "Play now on speakers", aiStopBtn: "Stop",
+      aiPlayHint: "Plays from the school computer's speakers (where the bells ring).",
+      aiDefaultName: "Announcement",
+      aiNeedText: "<b>Error:</b> type the announcement text first.",
+      aiConfTts: "<b>Voice generation is not set up yet.</b> Paste a Gemini key into Settings → \"AI keys\" (3 simple steps).",
+      aiGoKeys: "→ Open AI keys",
+      aiConfEnh: "<b>Text improvement is not set up yet.</b> It uses the same Gemini key.",
+      aiKeysTitle: "AI keys",
+      aiKeysStep1: "Open <a href=\"https://aistudio.google.com/apikey\" target=\"_blank\" rel=\"noopener\">aistudio.google.com/apikey</a> (or press <b>\"Get a key\"</b> below).",
+      aiKeysStep2: "Press <b>\"Create API key\"</b> and copy the key with <b>\"Copy\"</b>.",
+      aiKeysStep3: "Paste the key into the field below (Ctrl+V) and press <b>\"Save\"</b>. Done.",
+      aiKeyGeminiLabel: "Gemini API key", aiKeyGetBtn: "Get a key",
+      aiAzureSummary: "Azure (optional) - for the highest-quality Uzbek voice",
+      aiKeyAzureLabel: "Azure Speech key", aiKeyRegionLabel: "Azure region",
+      aiKeysSave: "Save", aiKeysPrivacy: "The key is stored only on this computer and is never shown anywhere.",
+      aiKeySet: "✓ saved", aiKeyMissing: "· not set",
+      okAiKeys: "<b>OK.</b> Key saved - you can now generate voice.",
+      errAiKeysEmpty: "<b>Error:</b> paste a key into the field first.",
+      aiIntroFail: "<b>Note:</b> the chime file could not be read - the announcement was created without it.",
+      okAiGenerated: "<b>OK.</b> The announcement is ready - give it a listen.",
+      okAiPlaying: "<b>OK.</b> The announcement is playing on the speakers.",
+      editTitle: "Edit bell", saveBtn: "Save", editTitleBtn: "Edit",
+      okDeleted: "<b>OK.</b> Bell deleted.",
+      errMsg: "<b>Error:</b> {msg}",
+      errPickSoundFirst: "<b>Error:</b> pick a sound file first.",
+      errPlay: "<b>Error:</b> could not play \"{sound}\".",
+      errPickTime: "<b>Error:</b> pick a time.",
+      errPickDays: "<b>Error:</b> pick at least one day of the week.",
+      errPickSound: "<b>Error:</b> pick a sound file or upload one from your computer.",
+      errRings: "<b>Error:</b> the number of rings must be at least 1.",
+      errWeeks: "<b>Error:</b> the number of weeks must be at least 1 (or leave it empty).",
+      annErr: "<b>Live announcement error:</b> {msg}",
+      annStarted: "<b>Live announcement started.</b> Speak into your microphone — the sound plays through the speakers connected to this computer.",
+      annStopped: "<b>Live announcement stopped.</b>",
+      dateFmt: "{w}, {d} {m}",
+      wdShort: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      wdFull: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      months: ["January","February","March","April","May","June","July","August","September","October","November","December"]
+    }
   };
+  const LANGS = ["uz","ru","en"];
   const WD_KEYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
-  const WD_UZ = {monday:"Dush",tuesday:"Sesh",wednesday:"Chor",thursday:"Pay",friday:"Jum",saturday:"Shan",sunday:"Yak"};
-  const WD_UZ_FULL = {monday:"Dushanba",tuesday:"Seshanba",wednesday:"Chorshanba",thursday:"Payshanba",friday:"Juma",saturday:"Shanba",sunday:"Yakshanba"};
-  const MONTHS_UZ = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
-  const CUSTOM_SOUND = "__custom__";
+  const MAX_LIB_BYTES = 50 * 1024 * 1024;
+  const KINDS = ["bell", "music", "announcement"];
+  const LOOKAHEAD_DAYS = 370; // keyingi qo'ng'iroq shu kun ichidan qidiriladi (uzun ta'tillar ham sig'adi)
+  const DEFAULT_RING_SEC = 6; // ovoz davomiyligi noma'lum bo'lsa (lokal fayl, kutubxonadan emas) shu deb hisoblanadi
 
+  let lang = "uz";
+  try{ const saved = localStorage.getItem("ois-lang"); if(LANGS.includes(saved)) lang = saved; }catch(e){}
+
+  function pluralIndex(n){
+    if(lang === "en") return n === 1 ? 0 : 1;
+    if(lang === "ru"){
+      const m10 = n % 10, m100 = n % 100;
+      if(m10 === 1 && m100 !== 11) return 0;
+      if(m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 1;
+      return 2;
+    }
+    return 0;
+  }
+  function raw(key){
+    const v = I18N[lang][key];
+    return v !== undefined ? v : I18N.uz[key];
+  }
+  function t(key, params){
+    let v = raw(key);
+    if(v === undefined) return key;
+    if(Array.isArray(v)) v = v[Math.min(pluralIndex(params && params.n), v.length - 1)];
+    return v.replace(/\{(\w+)\}/g, (m, k) => (params && k in params) ? params[k] : m);
+  }
+
+  let libraryLocal = [];         // lokal keshdagi kutubxona (server /api/audios)
+  let libraryByFile = new Map(); // "library/<id>.mp3" -> yozuv
   let config = null;       // serverdan olingan schedule.json
   let connected = false;
-  let mode = "live";       // "live" | "sim"
-  let simMinutes = 500;
-  let simPlaying = false;
-  let simTimer = null;
+  let connTried = false;
   let busy = false;        // API so'rovi ketayotganda tugmalarni bloklash
 
   function pad(n){ return String(n).padStart(2,"0"); }
-  function minutesToHHMM(m){ return pad(Math.floor(m/60)) + ":" + pad(m%60); }
-  function timeStrToMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+  function timeStrToMinutes(s){ const [h,m]=s.split(":").map(Number); return h*60+m; }
+  function dateStrOf(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function weekdayKeyOf(d){ return WD_KEYS[(d.getDay()+6)%7]; }
+  function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function parseDateStr(s){ const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+  function addDays(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function wdIndex(key){ return WD_KEYS.indexOf(key); }
+  function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
-  function getMoment(){
-    const d = new Date();
-    const wd = WD_KEYS[(d.getDay()+6)%7];
-    return {
-      weekdayKey: wd,
-      dateStr: d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()),
-      minutes: mode === "live" ? d.getHours()*60 + d.getMinutes() : simMinutes,
-      seconds: mode === "live" ? d.getSeconds() : 0,
-      dateObj: d,
-    };
+  // ---------- Custom dropdown: <select> ustiga o'z dizayn bilan ochiladigan ro'yxat ----------
+  // Asl <select> yashirin holda DOM'da qoladi (.value, .options, "change" hodisasi - hammasi
+  // o'zgarmaydi, qolgan kod shu orqali ishlayveradi). Ro'yxat har safar ochilganda select'ning
+  // joriy <option>laridan qayta tiklanadi, shuning uchun boshqa joyda innerHTML/value yangilansa ham
+  // (masalan ro'yxat qayta yuklanganda) hech narsani qo'lda sinxronlash shart emas.
+  const CSEL_ICON_CHEV = '<svg class="csel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  let openCsel = null; // bir vaqtda faqat bitta ro'yxat ochiq turadi
+
+  function closeCsel(){
+    if(!openCsel) return;
+    openCsel.panel.hidden = true;
+    openCsel.trigger.setAttribute("aria-expanded", "false");
+    openCsel = null;
   }
 
-  function getDayType(dateStr, weekdayKey){
-    if(!config) return null;
-    const ov = config.date_overrides || {};
-    if(ov[dateStr]) return ov[dateStr];
-    return (config.week_schedule || {})[weekdayKey] || null;
+  function refreshCsel(select){
+    const c = select._csel;
+    if(!c) return;
+    const opt = select.options[select.selectedIndex];
+    c.labelEl.textContent = opt ? opt.textContent : "";
+    c.trigger.disabled = !!select.disabled;
+  }
+
+  function buildCselPanel(select){
+    const panel = document.createElement("div");
+    panel.className = "csel-panel";
+    panel.hidden = true;
+    panel.setAttribute("role", "listbox");
+    let html = "";
+    Array.from(select.children).forEach(node=>{
+      const opts = node.tagName === "OPTGROUP" ? Array.from(node.children) : [node];
+      if(node.tagName === "OPTGROUP") html += `<div class="csel-group">${esc(node.label)}</div>`;
+      if(node.tagName !== "OPTGROUP" && node.tagName !== "OPTION") return;
+      opts.forEach(opt=>{
+        html += `<button type="button" class="csel-opt${opt.selected ? " sel" : ""}" data-value="${esc(opt.value)}" role="option" ${opt.disabled ? "disabled" : ""}>${esc(opt.textContent)}</button>`;
+      });
+    });
+    panel.innerHTML = html;
+    return panel;
+  }
+
+  function wireCustomSelect(select){
+    if(select._csel) return; // allaqachon ulangan
+    const originalClass = select.className;
+    const wrap = document.createElement("div");
+    wrap.className = "csel";
+    select.parentNode.insertBefore(wrap, select);
+    select.className = "csel-native";
+    select.tabIndex = -1;
+    wrap.appendChild(select);
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = ("csel-trigger " + originalClass).trim();
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.innerHTML = `<span class="csel-label"></span>${CSEL_ICON_CHEV}`;
+    wrap.appendChild(trigger);
+
+    const panel = buildCselPanel(select);
+    wrap.appendChild(panel);
+
+    select._csel = { wrap, trigger, panel, labelEl: trigger.querySelector(".csel-label") };
+
+    wrap.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      if(e.target.closest(".csel-trigger")){
+        if(openCsel && openCsel.select === select){ closeCsel(); return; }
+        closeCsel();
+        if(select.disabled) return;
+        const fresh = buildCselPanel(select);
+        select._csel.panel.replaceWith(fresh);
+        select._csel.panel = fresh;
+        fresh.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+        openCsel = { select, trigger, panel: fresh };
+        const sel = fresh.querySelector(".csel-opt.sel");
+        if(sel) sel.scrollIntoView({block: "nearest"});
+        return;
+      }
+      const opt = e.target.closest(".csel-opt");
+      if(!opt || opt.disabled) return;
+      select.value = opt.dataset.value;
+      refreshCsel(select);
+      closeCsel();
+      select.dispatchEvent(new Event("change", {bubbles: true}));
+    });
+
+    refreshCsel(select);
+  }
+
+  document.addEventListener("click", closeCsel);
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeCsel(); });
+
+  function getBells(){ return (config && config.bells) || []; }
+
+  // Fayl yo'lini (masalan library/<uuid>.mp3) odam o'qiy oladigan nomga aylantiradi
+  function soundLabel(file){
+    const e = libraryByFile.get(file);
+    return e ? e.name : file;
+  }
+
+  // Qo'ng'iroq shu sanada chalinadimi (hafta kuni + hafta soni chegarasi)
+  function isActiveOn(bell, date){
+    if(!(bell.days || []).includes(weekdayKeyOf(date))) return false;
+    if(bell.weeks && bell.start_date){
+      const diff = Math.round((startOfDay(date) - parseDateStr(bell.start_date)) / 86400000);
+      if(diff < 0 || diff >= bell.weeks * 7) return false;
+    }
+    return true;
+  }
+  function endDateStr(bell){
+    return dateStrOf(addDays(parseDateStr(bell.start_date), bell.weeks * 7 - 1));
+  }
+  function isExpired(bell, today){
+    return !!(bell.weeks && bell.start_date && startOfDay(today) > parseDateStr(endDateStr(bell)));
+  }
+  function getHolidays(){ return (config && config.holidays) || []; }
+  function getEvents(){ return (config && config.events) || []; }
+  // Shu sana dam olish kuni / ta'til ichidami (bo'lsa - o'sha yozuv)
+  // O'zbekiston davlat bayramlari (serverdagi bell_system/config/uz_holidays.json dan)
+  let publicHolidays = {fixed: [], dated: []};
+  function pubLabel(h){ return (h.label && (h.label[lang] || h.label.uz)) || ""; }
+  function publicHolidaysEnabled(){ return !(config && config.public_holidays === false); }
+  function publicHolidayOn(date){
+    const d = dateStrOf(date), md = d.slice(5);
+    const f = publicHolidays.fixed.find(h => h && h.md === md);
+    if(f) return {id: "pub:" + d, start: d, end: d, label: pubLabel(f), public: true, approx: false};
+    const x = publicHolidays.dated.find(h => h && h.date === d);
+    if(x) return {id: "pub:" + d, start: d, end: d, label: pubLabel(x), public: true, approx: !!x.approx};
+    return null;
+  }
+  async function fetchPublicHolidays(){
+    try{
+      const r = await api("/api/public-holidays");
+      if(r.ok){ const j = await r.json(); publicHolidays = {fixed: j.fixed || [], dated: j.dated || []}; }
+    }catch(e){ /* internet/server yo'q - faqat qo'lda kiritilgan dam olish kunlari */ }
+  }
+  // Dam olish kunimi: avval qo'lda kiritilgan ta'til/dam olish, keyin (yoqilgan bo'lsa) davlat bayrami.
+  // (bell_scheduler.py dagi holiday_on() bilan bir xil qoida)
+  function holidayOn(date){
+    const d = dateStrOf(date);
+    const own = getHolidays().find(h => h && h.start <= d && d <= (h.end || h.start));
+    if(own) return own;
+    return publicHolidaysEnabled() ? publicHolidayOn(date) : null;
+  }
+  // Shu sanaga qo'yilgan bir martalik qo'ng'iroqlar
+  function eventsOn(date){
+    const d = dateStrOf(date);
+    return getEvents().filter(e => e && e.date === d).map(e => Object.assign({oneTime: true}, e));
+  }
+  // Shu kuni chalinadigan hamma narsa: dam olish kuni bo'lmasa - haftalik qo'ng'iroqlar, har doim - bir martaliklar
+  // (bell_scheduler.py dagi qoida bilan bir xil)
+  function bellsOn(date){
+    const weekly = holidayOn(date) ? [] : getBells().filter(b => isActiveOn(b, date));
+    return weekly.concat(eventsOn(date)).sort((a,b) => a.time.localeCompare(b.time));
+  }
+  function oneTimeBadge(b){
+    return b.oneTime ? `<span class="onetime-badge">${esc(t("oneTimeTag"))}</span>` : "";
+  }
+
+  // Serverga so'rov: login tokenini qo'shadi. Server 401 qaytarsa (sessiya bekor qilingan) - qulflaydi.
+  let sessionKicked = false;
+  async function api(url, opts){
+    const o = Object.assign({}, opts);
+    o.headers = Object.assign({}, o.headers);
+    if(sbSession && sbSession.access_token) o.headers.Authorization = "Bearer " + sbSession.access_token;
+    const r = await fetch(url, o);
+    if(r.status === 401 && sb && sbSession && !sessionKicked){
+      sessionKicked = true;
+      sb.auth.signOut({scope: "local"}).catch(()=>{}).finally(()=>{ sessionKicked = false; });
+    }
+    return r;
+  }
+
+  async function apiError(r){
+    const j = await r.json().catch(()=>({}));
+    return new Error(j.error || ("HTTP " + r.status));
+  }
+  async function postJson(url, body){
+    const r = await api(url, {
+      method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+    });
+    if(!r.ok) throw await apiError(r);
+    const j = await r.json();
+    config = j.config;
   }
 
   async function fetchSchedule(){
-    const r = await fetch("/api/schedule");
-    if(!r.ok) throw new Error("schedule fetch xato: " + r.status);
+    const r = await api("/api/schedule");
+    if(!r.ok) throw new Error("schedule fetch: HTTP " + r.status);
     config = await r.json();
   }
 
   async function fetchLog(){
-    const r = await fetch("/api/log?limit=60");
+    const r = await api("/api/log?limit=60");
     if(!r.ok) return [];
     const j = await r.json();
     return j.rows || [];
   }
 
-  async function postDayType(date, dayType){
-    const r = await fetch("/api/day-type", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({date, dayType})
-    });
-    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
-    const j = await r.json();
-    config = j.config;
+  // ---------- xabarlar (toast, o'zi yo'qoladi) ----------
+  const toastBox = document.getElementById("toasts");
+  const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>';
+  const ICON_ERR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+  function dismissToast(el){
+    if(!el.isConnected || el.classList.contains("out")) return;
+    el.classList.add("out");
+    setTimeout(()=>el.remove(), 220);
   }
-
-  async function postWeek(weekday, dayType){
-    const r = await fetch("/api/week", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({weekday, dayType})
-    });
-    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
-    const j = await r.json();
-    config = j.config;
+  function notify(key, params, isErr){
+    const html = t(key, params);
+    // Bir xil xabar ketma-ket takrorlansa, eskisini almashtiramiz
+    toastBox.querySelectorAll(".toast").forEach(el=>{ if(el.dataset.html === html) el.remove(); });
+    while(toastBox.children.length >= 4) toastBox.firstElementChild.remove();
+    const el = document.createElement("div");
+    el.className = "toast" + (isErr ? " err" : "");
+    el.dataset.html = html;
+    el.setAttribute("role", isErr ? "alert" : "status");
+    el.innerHTML = (isErr ? ICON_ERR : ICON_OK) + `<div class="toast-msg">${html}</div><button type="button" class="toast-x" aria-label="Close">&times;</button>`;
+    el.querySelector(".toast-x").addEventListener("click", ()=>dismissToast(el));
+    toastBox.appendChild(el);
+    setTimeout(()=>dismissToast(el), isErr ? 8000 : 4000);
   }
-
-  function setBanner(msg, isErr){
-    const b = document.getElementById("banner");
-    if(msg === null){ b.style.display = "none"; return; }
-    b.style.display = "flex";
-    b.classList.toggle("err", !!isErr);
-    b.querySelector("div:last-child").innerHTML = msg;
-  }
+  function notifyError(e){ notify("errMsg", {msg: esc(e.message)}, true); }
 
   // ---------- tabs ----------
   const tabs = document.querySelectorAll(".tab");
   const panes = document.querySelectorAll(".tabpane");
+  function activateTab(name){
+    tabs.forEach(b=>b.classList.toggle("active", b.dataset.tab === name));
+    panes.forEach(p=>p.hidden = (p.dataset.pane !== name));
+    if(name === "settings") refreshLibraryStatus();
+    if(name === "ai" || name === "settings") refreshAiStatus(); // Sozlamalarda "AI kalitlari" holati ko'rinadi
+    if(name === "calendar") renderCalendar();
+  }
   tabs.forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      tabs.forEach(b=>b.classList.toggle("active", b===btn));
-      panes.forEach(p=>p.hidden = (p.dataset.pane !== btn.dataset.tab));
-    });
+    btn.addEventListener("click", ()=>activateTab(btn.dataset.tab));
   });
 
   // ---------- render ----------
   function renderClock(){
-    const mo = getMoment();
-    if(mode === "live"){
-      document.getElementById("hdrTime").textContent =
-        `${pad(Math.floor(mo.minutes/60))}:${pad(mo.minutes%60)}:${pad(mo.seconds)}`;
-    } else {
-      document.getElementById("hdrTime").textContent = minutesToHHMM(mo.minutes) + ":00";
-    }
-    document.getElementById("hdrDate").textContent =
-      `${mo.dateObj.getDate()} ${MONTHS_UZ[mo.dateObj.getMonth()]}, ${WD_UZ_FULL[mo.weekdayKey]}`;
+    const d = new Date();
+    document.getElementById("hdrTime").textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    document.getElementById("hdrDate").textContent = t("dateFmt", {
+      d: d.getDate(),
+      m: raw("months")[d.getMonth()],
+      w: raw("wdFull")[wdIndex(weekdayKeyOf(d))]
+    });
 
     const pill = document.getElementById("connPill");
-    pill.classList.toggle("off", !connected);
-    document.getElementById("connText").textContent = connected ? "server bilan ulangan" : "server bilan aloqa yo'q";
+    pill.classList.toggle("off", connTried && !connected);
+    document.getElementById("connText").textContent = t(!connTried ? "connWait" : connected ? "connOn" : "connOff");
+  }
+
+  function ringsBadge(bell){
+    const n = bell.rings || 1;
+    return n > 1 ? `<span class="rings-badge mono" title="${esc(t("ringsTitle", {n}))}">&times;${n}</span>` : "";
+  }
+  // 100% dan past ovoz balandligi bo'lsa, ro'yxatda kichik belgi ko'rsatiladi
+  function volumeBadge(bell){
+    const n = bell.volume;
+    return n && n < 100 ? `<span class="rings-badge mono" title="${esc(t("volumeTitle", {n}))}">${n}%</span>` : "";
+  }
+
+  // Keyingi qo'ng'iroqni bugundan boshlab LOOKAHEAD_DAYS kun ichidan qidiradi.
+  // "diff" - qolgan vaqt, SONIYALARDA (soat:daqiqa:soniya ko'rinishida chiqarish uchun).
+  function findNextBell(now){
+    const nowSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+    for(let off = 0; off < LOOKAHEAD_DAYS; off++){
+      const day = addDays(now, off);
+      const list = bellsOn(day).filter(b => off > 0 || timeStrToMinutes(b.time)*60 > nowSec);
+      if(list.length) return { bell: list[0], off, diff: off*86400 + timeStrToMinutes(list[0].time)*60 - nowSec, day };
+    }
+    return null;
+  }
+
+  // Soniyalarni "H:MM:SS" ko'rinishiga o'tkazadi (soat, daqiqa, soniya - hammasi ko'rinadi)
+  function fmtCountdown(totalSec){
+    const s = Math.max(0, Math.round(totalSec));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return `${h}:${pad(m)}:${pad(sec)}`;
+  }
+
+  // Qo'ng'iroq taxminan necha soniya chalinadi (rings marta ketma-ket, bell_scheduler.py orasida tanaffussiz chaladi).
+  // Kutubxonadagi ovozlar uchun aniq davomiylik bor; lokal (audios/) fayllar uchun - taxminiy standart qiymat.
+  function ringDurationSec(bell){
+    const entry = libraryByFile.get(bell.sound);
+    const one = (entry && entry.duration != null && entry.duration > 0) ? Number(entry.duration) : DEFAULT_RING_SEC;
+    return one * Math.max(1, bell.rings || 1);
   }
 
   function renderMain(){
     if(!config) return;
-    const mo = getMoment();
-    const dayType = getDayType(mo.dateStr, mo.weekdayKey);
-    const badge = document.getElementById("dtBadge");
-    const badgeText = document.getElementById("dtBadgeText");
-
-    if(!dayType){
-      badge.classList.add("off"); badgeText.textContent = "Bugun signal yo'q";
-    } else {
-      badge.classList.remove("off");
-      badgeText.textContent = DAY_TYPE_LABELS[dayType] || dayType;
-    }
-
-    const events = dayType ? (config.day_types[dayType] || []) : [];
-    const nowMin = mo.minutes;
+    const now = new Date();
+    const nowSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+    const events = bellsOn(now);
 
     const tl = document.getElementById("timeline");
     tl.innerHTML = "";
-    document.getElementById("tlCount").textContent = events.length ? `${events.length} ta signal` : "";
+    document.getElementById("tlCount").textContent = events.length ? t("nBells", {n: events.length}) : "";
+    const todayHol = holidayOn(now);
+    if(todayHol) tl.insertAdjacentHTML("beforeend", `<div class="ai-note">${t("todayHoliday", {label: esc(todayHol.label)})}</div>`);
     if(!events.length){
-      tl.innerHTML = `<div class="log-empty">Bugun uchun signal jadvali belgilanmagan.</div>`;
+      tl.insertAdjacentHTML("beforeend", `<div class="log-empty">${t("noBellsToday")}</div>`);
     }
 
-    let nextEvent = null, nowEvent = null;
+    // Har bir hodisa uchun: hali kelmagan (kutilmoqda) / hozir chalinmoqda (taxminiy davomiyligi ichida) /
+    // allaqachon chalinib bo'lgan - shu orqali "hozir" belgisi butun daqiqa emas, faqat ovoz davomicha turadi.
+    let nowEvent = null, nextRow = null, foundNext = false;
     events.forEach(ev=>{
-      const evMin = timeStrToMinutes(ev.time);
+      const evSec = timeStrToMinutes(ev.time) * 60;
+      const elapsed = nowSec - evSec;
+      const dur = ringDurationSec(ev);
+      const playing = elapsed >= 0 && elapsed < dur;
+      const past = elapsed >= dur;
       const row = document.createElement("div");
       let cls = "tl-row";
-      if(evMin < nowMin) cls += " past";
-      if(evMin === nowMin){ cls += " now"; nowEvent = ev; }
+      if(past) cls += " past";
+      if(playing){ cls += " now"; if(!nowEvent) nowEvent = ev; }
       row.className = cls;
-      row.innerHTML = `<div class="t mono">${ev.time}</div><div class="dot"></div>
-        <div><div>${ev.label}</div><div class="snd mono">${ev.sound}</div></div><div></div>`;
+      // Har bir qatorda ham o'sha qo'ng'iroqgacha qolgan vaqt (yoki "chalinmoqda") ko'rsatiladi
+      const countdown = playing ? `<span class="tl-countdown">${t("tlPlaying")}</span>`
+        : past ? ""
+        : `<span class="tl-countdown mono">${fmtCountdown(-elapsed)}</span>`;
+      row.innerHTML = `<div class="t mono">${esc(ev.time)}</div><div class="dot"></div>
+        <div><div>${esc(ev.label)}</div><div class="snd mono">${esc(soundLabel(ev.sound))}</div></div>
+        <div class="tl-right">${oneTimeBadge(ev)}${ringsBadge(ev)}${volumeBadge(ev)}${countdown}</div>`;
       tl.appendChild(row);
-      if(evMin > nowMin && !nextEvent) nextEvent = {...ev, _row:row};
+      if(elapsed < 0 && !foundNext){ foundNext = true; nextRow = row; }
     });
-    if(nextEvent && nextEvent._row) nextEvent._row.classList.add("next");
+    if(nextRow) nextRow.classList.add("next");
 
     const heroLabel = document.getElementById("heroLabel");
     const heroSub = document.getElementById("heroSub");
     const heroCountdown = document.getElementById("heroCountdown");
     const heroEyebrow = document.getElementById("heroEyebrow");
 
+    const next = nowEvent ? null : findNextBell(now);
     if(nowEvent){
-      heroEyebrow.textContent = "Hozir chalinmoqda";
+      heroEyebrow.textContent = t("eyebrowNow");
       heroLabel.textContent = nowEvent.label;
-      heroSub.textContent = nowEvent.time + " · " + nowEvent.sound;
+      heroSub.textContent = nowEvent.time + " · " + soundLabel(nowEvent.sound);
       heroCountdown.textContent = "♪ ♪ ♪";
       heroCountdown.classList.add("pulse");
-    } else if(nextEvent){
-      heroEyebrow.textContent = "Keyingi signal";
-      heroLabel.textContent = nextEvent.label;
-      heroSub.textContent = nextEvent.time + " · " + nextEvent.sound;
-      const diff = timeStrToMinutes(nextEvent.time) - nowMin;
-      heroCountdown.textContent = diff <= 0 ? "0:00" : `${Math.floor(diff/60)}:${pad(diff%60)}`;
+    } else if(next){
+      heroEyebrow.textContent = t("eyebrowNext");
+      heroLabel.textContent = next.bell.label;
+      // Bugun - hech narsa; shu hafta ichida - hafta kuni; undan uzoqda (masalan ta'tildan keyin) - sana
+      const when = next.off === 0 ? ""
+        : next.off < 7 ? raw("wdFull")[wdIndex(weekdayKeyOf(next.day))] + " · "
+        : fmtDateHuman(dateStrOf(next.day)) + " · ";
+      heroSub.textContent = when + next.bell.time + " · " + soundLabel(next.bell.sound);
+      heroCountdown.textContent = fmtCountdown(next.diff);
       heroCountdown.classList.remove("pulse");
     } else {
-      heroEyebrow.textContent = dayType ? "Bugungi signallar tugadi" : "Bugun signal yo'q";
-      heroLabel.textContent = dayType ? "Ertangi kungacha kutilmoqda" : "Dam olish kuni";
+      heroEyebrow.textContent = t("eyebrowNone");
+      heroLabel.textContent = t(getBells().length ? "labelNoUpcoming" : "labelEmpty");
       heroSub.textContent = "";
       heroCountdown.textContent = "—";
       heroCountdown.classList.remove("pulse");
     }
   }
 
-  function renderDtList(){
+  // ---------- Tasdiqlash / so'rash oynasi ----------
+  // Brauzerning confirm()/prompt() oynalari ba'zi brauzerlarda (masalan ilova ichidagi) ishlamaydi va
+  // dizaynga mos emas - shuning uchun o'zimizning oynamiz. Natija: Promise (true/false yoki kiritilgan matn/null).
+  const askDialog = document.getElementById("askDialog");
+  const askIcon = document.getElementById("askIcon");
+  const askTitle = document.getElementById("askTitle");
+  const askText = document.getElementById("askText");
+  const askField = document.getElementById("askField");
+  const askInput = document.getElementById("askInput");
+  const askOk = document.getElementById("askOk");
+  const askCancel = document.getElementById("askCancel");
+  const ICON_ASK_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  const ICON_ASK_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  let askResolve = null;
+
+  // html - tayyor (xavfsiz qilingan) HTML; input - matn so'ralsa boshlang'ich qiymat
+  function askBox({title, html, okLabel, danger = false, input = null}){
+    if(askResolve) closeAsk(null);
+    return new Promise(resolve=>{
+      askResolve = resolve;
+      askTitle.textContent = title;
+      askText.innerHTML = html || "";
+      askIcon.className = "ask-icon" + (danger ? "" : " info");
+      askIcon.innerHTML = danger ? ICON_ASK_TRASH : ICON_ASK_EDIT;
+      askField.hidden = input === null;
+      askInput.value = input === null ? "" : input;
+      askOk.textContent = okLabel;
+      askOk.className = "playbtn " + (danger ? "danger" : "primary");
+      askCancel.textContent = t("cancelBtn");
+      askDialog.showModal();
+      if(input !== null){ askInput.focus(); askInput.select(); }
+      else askCancel.focus(); // xavfsiz tanlov: Enter tasodifan "o'chirish" ni bosmasin
+    });
+  }
+  function closeAsk(result){
+    if(askDialog.open) askDialog.close();
+    if(askResolve){ const r = askResolve; askResolve = null; r(result); }
+  }
+  const askNo = ()=> closeAsk(askField.hidden ? false : null);
+  askOk.addEventListener("click", ()=> closeAsk(askField.hidden ? true : askInput.value));
+  askCancel.addEventListener("click", askNo);
+  askDialog.addEventListener("cancel", (e)=>{ e.preventDefault(); askNo(); });                 // Esc
+  askDialog.addEventListener("mousedown", (e)=>{ if(e.target === askDialog) askNo(); });       // fonni bosish
+  askInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); askOk.click(); } });
+
+  const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+
+  function renderBellList(){
     if(!config) return;
-    const todayReal = (() => {
-      const d = new Date();
-      return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
-    })();
-    const current = getDayType(todayReal, WD_KEYS[(new Date().getDay()+6)%7]);
-    const el = document.getElementById("dtList");
+    const today = new Date();
+    const bells = getBells().slice().sort((a,b) => a.time.localeCompare(b.time));
+    document.getElementById("allCount").textContent = bells.length ? t("nBells", {n: bells.length}) : "";
+    const el = document.getElementById("bellList");
     el.innerHTML = "";
-    Object.keys(config.day_types).forEach(key=>{
-      const btn = document.createElement("button");
-      btn.className = "dt-btn" + (current === key ? " active" : "");
-      btn.disabled = busy;
-      btn.innerHTML = `<b>${DAY_TYPE_LABELS[key] || key}</b><span class="n">${config.day_types[key].length} ta signal</span>`;
-      btn.addEventListener("click", async ()=>{
-        busy = true; renderDtList();
+    if(!bells.length){
+      el.innerHTML = `<div class="log-empty">${t("noBells")}</div>`;
+      return;
+    }
+    bells.forEach(b=>{
+      const expired = isExpired(b, today);
+      const row = document.createElement("div");
+      row.className = "bell-row" + (expired ? " expired" : "");
+      const dots = WD_KEYS.map(k=>`<span class="${(b.days||[]).includes(k) ? "on" : ""}">${raw("wdShort")[wdIndex(k)]}</span>`).join("");
+      let weeksText;
+      if(!b.weeks) weeksText = t("weeksForever");
+      else if(expired) weeksText = t("weeksExpired", {date: endDateStr(b)});
+      else weeksText = t("weeksLimited", {n: b.weeks, date: endDateStr(b)});
+      row.innerHTML = `<div class="t mono">${esc(b.time)}</div>
+        <div><div>${esc(b.label)}</div><div class="snd mono">${esc(soundLabel(b.sound))}</div><div class="daydots">${dots}</div></div>
+        <div class="meta">${ringsBadge(b)}${volumeBadge(b)}<span>${weeksText}</span></div>
+        <div class="bell-actions">
+          <button type="button" class="sig-edit" title="${esc(t("editTitleBtn"))}" ${busy?"disabled":""}>${ICON_PENCIL}</button>
+          <button type="button" class="sig-del" title="${esc(t("delTitle"))}" ${busy?"disabled":""}>&times;</button>
+        </div>`;
+      row.querySelector(".sig-edit").addEventListener("click", ()=>openBellDialog(b));
+      row.querySelector(".sig-del").addEventListener("click", async ()=>{
+        const ok = await askBox({
+          title: t("delBellTitle"),
+          html: t("confirmDelete", {time: esc(b.time), label: esc(b.label)}) + "<br>" + esc(t("cannotUndo")),
+          okLabel: t("delBtn"), danger: true,
+        });
+        if(!ok) return;
+        busy = true; renderBellList();
         try{
-          await postDayType(todayReal, key);
-          setBanner(`<b>OK.</b> Bugun (${todayReal}) endi <b>${DAY_TYPE_LABELS[key]||key}</b> bo'yicha ishlaydi. schedule.json yangilandi.`, false);
+          await postJson("/api/bell/remove", {id: b.id});
+          notify("okDeleted", null, false);
         }catch(e){
-          setBanner(`<b>Xato:</b> ${e.message}`, true);
+          notifyError(e);
         }
         busy = false;
         renderAll();
       });
-      el.appendChild(btn);
+      el.appendChild(row);
     });
   }
 
-  function renderWeekGrid(){
-    if(!config) return;
-    const todayWd = WD_KEYS[(new Date().getDay()+6)%7];
-    const el = document.getElementById("weekGrid");
-    el.innerHTML = "";
-    WD_KEYS.forEach(k=>{
-      const cell = document.createElement("div");
-      cell.className = "week-cell" + (k === todayWd ? " today" : "");
-      const cur = (config.week_schedule || {})[k];
-      const opts = ['<option value="">yo\'q</option>'].concat(
-        Object.keys(config.day_types).map(dt=>`<option value="${dt}" ${cur===dt?"selected":""}>${DAY_TYPE_LABELS[dt]||dt}</option>`)
-      );
-      cell.innerHTML = `<div class="d">${WD_UZ[k]}</div><select data-wd="${k}" ${busy?"disabled":""}>${opts.join("")}</select>`;
-      el.appendChild(cell);
-    });
-    el.querySelectorAll("select").forEach(sel=>{
-      sel.addEventListener("change", async ()=>{
-        busy = true;
-        try{
-          await postWeek(sel.dataset.wd, sel.value);
-          setBanner(`<b>OK.</b> ${WD_UZ_FULL[sel.dataset.wd]} kuni yangilandi.`, false);
-        }catch(e){
-          setBanner(`<b>Xato:</b> ${e.message}`, true);
-        }
-        busy = false;
-        renderAll();
-      });
-    });
-  }
-
-  function renderStats(){
-    if(!config) return;
-    const totalSignals = Object.values(config.day_types).reduce((s,arr)=>s+arr.length,0);
-    const el = document.getElementById("stats");
-    el.innerHTML = `
-      <div class="stat"><div class="v">${Object.keys(config.day_types).length}</div><div class="k">kun turi</div></div>
-      <div class="stat"><div class="v">${totalSignals}</div><div class="k">jami signal</div></div>
-      <div class="stat"><div class="v">${Object.keys(config.date_overrides||{}).filter(k=>!k.startsWith("_")).length}</div><div class="k">maxsus sana</div></div>
-    `;
-  }
-
+  // Jurnal qatorlarini bell_scheduler.py yozadi (o'zbekcha) - tarjima qilinmaydi
+  let lastLogRows = [];
   function renderLog(rows){
+    if(rows) lastLogRows = rows;
+    rows = lastLogRows;
     const el = document.getElementById("logList");
     if(!rows || !rows.length){
-      el.innerHTML = `<div class="log-empty">Hali hech narsa qayd etilmagan. bell_scheduler.py ishga tushib, birinchi signal chalinganda shu yerda ko'rinadi.</div>`;
+      el.innerHTML = `<div class="log-empty">${t("logEmpty")}</div>`;
       return;
     }
     el.innerHTML = rows.map(r=>
-      `<div class="log-row"><span class="lt mono">${r.vaqt}</span><span>${r.xabar}</span></div>`
+      `<div class="log-row"><span class="lt mono">${esc(r.vaqt)}</span><span>${esc(r.xabar)}</span></div>`
     ).join("");
   }
 
   function renderAll(){
     renderClock();
     renderMain();
-    renderDtList();
-    renderWeekGrid();
-    renderStats();
-    if(!sigBusy) renderSigPanel();
+    renderBellList();
+    renderCalendar();
   }
 
-  // ---------- signallarni boshqarish (qo'shish / o'chirish) ----------
-  const sigDayType = document.getElementById("sigDayType");
-  const sigList = document.getElementById("sigList");
-  const sigTime = document.getElementById("sigTime");
-  const sigLabel = document.getElementById("sigLabel");
-  const sigSoundSelect = document.getElementById("sigSoundSelect");
-  const sigSoundCustom = document.getElementById("sigSoundCustom");
-  const sigPreviewBtn = document.getElementById("sigPreviewBtn");
-  const sigAddBtn = document.getElementById("sigAddBtn");
+  // ---------- yangi qo'ng'iroq qo'shish ----------
+  const bellTime = document.getElementById("bellTime");
+  const bellLabel = document.getElementById("bellLabel");
+  const bellSoundSelect = document.getElementById("bellSoundSelect");
+  wireCustomSelect(bellSoundSelect);
+  const bellPreviewBtn = document.getElementById("bellPreviewBtn");
+  const bellRings = document.getElementById("bellRings");
+  const bellWeeks = document.getElementById("bellWeeks");
+  const bellVolume = document.getElementById("bellVolume");
+  const bellVolumeVal = document.getElementById("bellVolumeVal");
+  const bellAddBtn = document.getElementById("bellAddBtn");
+  const dayChips = document.getElementById("dayChips");
   const previewAudio = document.getElementById("previewAudio");
-  let sigBusy = false;
+  const bellDialog = document.getElementById("bellDialog");
+  const dlgError = document.getElementById("dlgError");
+  const modalCard = bellDialog.querySelector(".modal-card");
   let audioFiles = [];
+  let audioLoaded = false;
+  let selectedDays = new Set(WD_KEYS.slice(0, 5));
+  let editingBell = null; // tahrirlanayotgan qo'ng'iroq; null - yangi qo'shish rejimi
+
+  function renderDayChips(){
+    dayChips.innerHTML = "";
+    WD_KEYS.forEach(k=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "day-chip" + (selectedDays.has(k) ? " on" : "");
+      btn.setAttribute("aria-pressed", selectedDays.has(k) ? "true" : "false");
+      btn.title = raw("wdFull")[wdIndex(k)];
+      btn.textContent = raw("wdShort")[wdIndex(k)];
+      btn.addEventListener("click", ()=>{
+        if(selectedDays.has(k)) selectedDays.delete(k); else selectedDays.add(k);
+        renderDayChips();
+      });
+      dayChips.appendChild(btn);
+    });
+  }
+  document.querySelectorAll(".preset").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      selectedDays = new Set(btn.dataset.preset === "work" ? WD_KEYS.slice(0, 5) : WD_KEYS);
+      renderDayChips();
+    });
+  });
 
   function currentSoundValue(){
-    return sigSoundSelect.value === CUSTOM_SOUND ? sigSoundCustom.value.trim() : sigSoundSelect.value;
+    return bellSoundSelect.value;
+  }
+
+  function renderSoundOptions(wanted){
+    const prev = wanted !== undefined ? wanted : bellSoundSelect.value;
+    const groups = [];
+    if(libraryLocal.length){
+      groups.push(`<optgroup label="${esc(t("soundGroupLib"))}">` +
+        libraryLocal.map(e=>`<option value="${esc(e.file)}">${esc(e.name)}</option>`).join("") + `</optgroup>`);
+    }
+    if(audioFiles.length){
+      groups.push(`<optgroup label="${esc(t("soundGroupLocal"))}">` +
+        audioFiles.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join("") + `</optgroup>`);
+    }
+    bellSoundSelect.innerHTML = groups.length
+      ? groups.join("")
+      : `<option value="" disabled selected>${t("noAudio")}</option>`;
+    // Tahrirlanayotgan qo'ng'iroqning fayli ro'yxatda yo'q bo'lsa (o'chirilgan/hali sinxronlanmagan),
+    // uni boshqa faylga jimgina almashtirib yubormaslik uchun ro'yxatga qo'shib qo'yamiz
+    if(prev && editingBell && editingBell.sound === prev && ![...bellSoundSelect.options].some(o=>o.value === prev)){
+      bellSoundSelect.insertAdjacentHTML("afterbegin", `<option value="${esc(prev)}">${esc(soundLabel(prev))}</option>`);
+    }
+    if(prev && [...bellSoundSelect.options].some(o=>o.value === prev)) bellSoundSelect.value = prev;
+    refreshCsel(bellSoundSelect);
   }
 
   async function fetchAudioFiles(){
     try{
-      const r = await fetch("/api/audios");
+      const r = await api("/api/audios");
       const j = await r.json();
       audioFiles = j.files || [];
-      sigSoundSelect.innerHTML =
-        audioFiles.map(f=>`<option value="${f}">${f}</option>`).join("") +
-        `<option value="${CUSTOM_SOUND}">— boshqa nom kiritish —</option>`;
+      libraryLocal = j.library || [];
+      libraryByFile = new Map(libraryLocal.map(e=>[e.file, e]));
+      audioLoaded = true;
+      renderSoundOptions();
+      renderAiIntroOptions();
+      renderMain(); renderBellList();
     }catch(e){ /* jim */ }
   }
 
-  sigSoundSelect.addEventListener("change", ()=>{
-    sigSoundCustom.hidden = sigSoundSelect.value !== CUSTOM_SOUND;
-    if(!sigSoundCustom.hidden) sigSoundCustom.focus();
-  });
+  // ---------- vaqt tanlagich (aylanadigan g'ildirak) ----------
+  const ROW = 44;
+  const tpWrap = document.getElementById("timePick");
+  const tpPop = document.getElementById("timePop");
+  const tpHours = document.getElementById("tpHours");
+  const tpMins = document.getElementById("tpMins");
+  const tpItems = (n) => Array.from({length: n}, (_, i) =>
+    `<button type="button" class="tp-item" role="option" tabindex="-1" data-i="${i}">${pad(i)}</button>`).join("");
+  tpHours.innerHTML = tpItems(24);
+  tpMins.innerHTML = tpItems(60);
+  let tpTouched = false;
+  const tpTimers = new WeakMap();
+  const tpFrames = new WeakMap();
 
-  sigPreviewBtn.addEventListener("click", ()=>{
-    const sound = currentSoundValue();
-    if(!sound){ setBanner("<b>Xato:</b> avval ovoz faylini tanlang.", true); return; }
-    previewAudio.src = "/audios/" + encodeURIComponent(sound);
-    previewAudio.play().catch(()=> setBanner(`<b>Xato:</b> "${sound}" faylini eshittirib bo'lmadi.`, true));
-  });
-
-  async function postSignalAdd(dayType, time, label, sound){
-    const r = await fetch("/api/signal/add", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({dayType, time, label, sound})
-    });
-    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
-    const j = await r.json();
-    config = j.config;
+  function wheelIndex(w){
+    return Math.max(0, Math.min(w.children.length - 1, Math.round(w.scrollTop / ROW)));
   }
-
-  async function postSignalRemove(dayType, index){
-    const r = await fetch("/api/signal/remove", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({dayType, index})
-    });
-    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || ("xato " + r.status)); }
-    const j = await r.json();
-    config = j.config;
-  }
-
-  function renderSigPanel(){
-    if(!config) return;
-    const keys = Object.keys(config.day_types);
-    const prevSelected = sigDayType.value;
-    sigDayType.innerHTML = keys.map(k=>`<option value="${k}">${DAY_TYPE_LABELS[k]||k}</option>`).join("");
-    sigDayType.value = keys.includes(prevSelected) ? prevSelected : keys[0];
-    sigDayType.disabled = sigBusy;
-
-    const dt = sigDayType.value;
-    const events = (config.day_types[dt] || []);
-    sigList.innerHTML = "";
-    if(!events.length){
-      sigList.innerHTML = `<div class="log-empty">Bu kun turida hali signal yo'q.</div>`;
+  // Markazdan uzoqlashgan sari raqam kichrayadi va xiralashadi
+  function styleWheel(w){
+    const pos = w.scrollTop / ROW;
+    for(let i = 0; i < w.children.length; i++){
+      const d = Math.min(Math.abs(i - pos), 3);
+      const el = w.children[i];
+      el.style.opacity = Math.max(0.12, 1 - d * 0.5).toFixed(2);
+      el.style.transform = `scale(${(1 - Math.min(d, 2) * 0.2).toFixed(3)})`;
+      el.style.fontWeight = d < 0.5 ? "500" : "300";
     }
-    events.forEach((ev, idx)=>{
-      const row = document.createElement("div");
-      row.className = "sig-row";
-      row.innerHTML = `<div class="t mono">${ev.time}</div>
-        <div><div>${ev.label}</div><div class="snd mono">${ev.sound}</div></div>
-        <button class="sig-del" title="O'chirish" ${sigBusy?"disabled":""}>&times;</button>`;
-      row.querySelector(".sig-del").addEventListener("click", async ()=>{
-        if(!confirm(`"${ev.time} - ${ev.label}" signalini o'chirishga ishonchingiz komilmi?`)) return;
-        sigBusy = true; renderSigPanel();
-        try{
-          await postSignalRemove(dt, idx);
-          setBanner(`<b>OK.</b> Signal o'chirildi.`, false);
-        }catch(e){
-          setBanner(`<b>Xato:</b> ${e.message}`, true);
-        }
-        sigBusy = false;
-        renderAll(); renderSigPanel();
-      });
-      sigList.appendChild(row);
+  }
+  function tpCommit(){
+    bellTime.value = pad(wheelIndex(tpHours)) + ":" + pad(wheelIndex(tpMins));
+  }
+  function tpSetWheels(h, m){
+    tpHours.scrollTop = h * ROW;
+    tpMins.scrollTop = m * ROW;
+    styleWheel(tpHours); styleWheel(tpMins);
+  }
+  function openTimePop(){
+    const m = /^(\d\d):(\d\d)$/.exec(bellTime.value);
+    tpTouched = false;
+    tpPop.hidden = false;
+    placeTimePop();
+    tpSetWheels(m ? +m[1] : 8, m ? +m[2] : 0);
+  }
+  // Popover kartaning ichida qirqilib qolmasligi uchun ekranga nisbatan joylanadi
+  function placeTimePop(){
+    const r = bellTime.getBoundingClientRect();
+    const w = tpPop.offsetWidth, h = tpPop.offsetHeight, gap = 8, edge = 12;
+    let top = r.bottom + gap;
+    if(top + h > window.innerHeight - edge) top = r.top - h - gap;
+    top = Math.max(edge, Math.min(top, window.innerHeight - h - edge));
+    const left = Math.max(edge, Math.min(r.left, window.innerWidth - w - edge));
+    tpPop.style.top = top + "px";
+    tpPop.style.left = left + "px";
+  }
+  function closeTimePop(){ tpPop.hidden = true; }
+
+  [tpHours, tpMins].forEach(w=>{
+    w.addEventListener("scroll", ()=>{
+      if(!tpFrames.get(w)){
+        tpFrames.set(w, requestAnimationFrame(()=>{ tpFrames.set(w, 0); styleWheel(w); }));
+      }
+      // Aylantirish to'xtagach qiymatni yozamiz
+      clearTimeout(tpTimers.get(w));
+      tpTimers.set(w, setTimeout(()=>{ if(tpTouched) tpCommit(); }, 120));
+    }, {passive: true});
+    ["pointerdown", "wheel", "keydown", "touchstart"].forEach(ev=>
+      w.addEventListener(ev, ()=>{ tpTouched = true; }, {passive: true}));
+    w.addEventListener("click", (e)=>{
+      const b = e.target.closest(".tp-item"); if(!b) return;
+      tpTouched = true;
+      w.scrollTo({top: Number(b.dataset.i) * ROW, behavior: "smooth"});
     });
+  });
+
+  window.addEventListener("resize", ()=>{ if(!tpPop.hidden) placeTimePop(); });
+  bellDialog.querySelector(".modal-card").addEventListener("scroll", ()=>{ if(!tpPop.hidden) closeTimePop(); }, {passive: true});
+  bellTime.addEventListener("click", ()=>{ tpPop.hidden ? openTimePop() : closeTimePop(); });
+  bellTime.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter" || e.key === " " || e.key === "ArrowDown"){ e.preventDefault(); openTimePop(); }
+  });
+  document.getElementById("tpOk").addEventListener("click", ()=>{ tpCommit(); closeTimePop(); });
+  bellDialog.addEventListener("mousedown", (e)=>{ if(!tpPop.hidden && !tpWrap.contains(e.target)) closeTimePop(); });
+  // Esc avval tanlagichni yopadi, oynani emas
+  bellDialog.addEventListener("cancel", (e)=>{ if(!tpPop.hidden){ e.preventDefault(); closeTimePop(); } });
+
+  // Popup ichidagi xatolar (sahifadagi banner oyna orqasida qolib ketadi)
+  function dlgFail(key, params){
+    dlgError.hidden = false;
+    dlgError.querySelector("div").innerHTML = t(key, params);
+  }
+  // Bitta oyna ikki rejimda ishlaydi: yangi qo'shish (bell = null) va mavjudini tahrirlash
+  const dlgTitle = bellDialog.querySelector(".modal-head h2");
+  function setDialogMode(bell){
+    editingBell = bell || null;
+    dlgTitle.dataset.i18n = editingBell ? "editTitle" : "addTitle";
+    bellAddBtn.dataset.i18n = editingBell ? "saveBtn" : "addBtn";
+    dlgTitle.textContent = t(dlgTitle.dataset.i18n);
+    bellAddBtn.textContent = t(bellAddBtn.dataset.i18n);
+  }
+  function resetBellForm(){
+    bellTime.value = ""; bellLabel.value = "";
+    bellRings.value = "1"; bellWeeks.value = "";
+    bellVolume.value = "100"; syncVolume();
+    selectedDays = new Set(WD_KEYS.slice(0, 5)); renderDayChips();
+  }
+  function fillBellForm(b){
+    bellTime.value = b.time;
+    bellLabel.value = b.label || "";
+    bellRings.value = String(b.rings || 1);
+    bellWeeks.value = b.weeks ? String(b.weeks) : "";
+    bellVolume.value = String(b.volume || 100); syncVolume();
+    selectedDays = new Set(b.days || []); renderDayChips();
+    renderSoundOptions(b.sound);
+  }
+  function openBellDialog(bell){
+    dlgError.hidden = true;
+    setDialogMode(bell);
+    if(bell) fillBellForm(bell);
+    bellDialog.showModal();
+    modalCard.focus({preventScroll:true});
+    fetchAudioFiles(); // papkadagi fayllar o'zgargan bo'lishi mumkin
+  }
+  function closeBellDialog(){
+    closeTimePop();
+    previewAudio.pause();
+    bellDialog.close();
+  }
+  // Oyna qanday yopilmasin (tugma, Esc, fon) - tahrirlashdan keyin "Qo'shish" oynasi eski qiymatlar bilan ochilmasin
+  bellDialog.addEventListener("close", ()=>{
+    if(editingBell){ resetBellForm(); setDialogMode(null); }
+    if(dialogKind !== "bell"){ dialogKind = "bell"; applyDialogKind(); }
+  });
+
+  // Oyna turi: "bell" - haftalik qo'ng'iroq (hafta kunlari), "event" - bir martalik (aniq sana)
+  const bellDateField = document.getElementById("bellDateField");
+  const bellDate = document.getElementById("bellDate");
+  const bellDaysBlock = document.getElementById("bellDaysBlock");
+  const bellWeeksField = document.getElementById("bellWeeksField");
+  let dialogKind = "bell";
+  function applyDialogKind(){
+    const ev = dialogKind === "event";
+    bellDateField.hidden = !ev;
+    bellDaysBlock.hidden = ev;
+    bellWeeksField.hidden = ev;
+    if(ev){ dlgTitle.dataset.i18n = "evDlgTitle"; dlgTitle.textContent = t("evDlgTitle"); }
+  }
+  function openEventDialog(dateStr){
+    dialogKind = "event";
+    openBellDialog(null);
+    bellDate.min = dateStrOf(new Date());
+    bellDate.value = dateStr;
+    applyDialogKind();
   }
 
-  sigDayType.addEventListener("change", renderSigPanel);
-
-  sigAddBtn.addEventListener("click", async ()=>{
-    const dt = sigDayType.value;
-    const time = sigTime.value;
-    const label = sigLabel.value.trim();
+  async function saveEvent(){
+    const date = bellDate.value;
+    const time = bellTime.value;
+    const label = bellLabel.value.trim();
     const sound = currentSoundValue();
-    if(!time){ setBanner("<b>Xato:</b> vaqtni tanlang.", true); return; }
-    if(!label){ setBanner("<b>Xato:</b> nom kiriting.", true); return; }
-    if(!sound){ setBanner("<b>Xato:</b> ovoz faylini tanlang yoki nomini kiriting.", true); return; }
-    sigBusy = true; renderSigPanel();
+    const rings = Number(bellRings.value || 1);
+    const volume = Number(bellVolume.value || 100);
+    if(!date){ dlgFail("errPickDate"); return; }
+    if(!time){ dlgFail("errPickTime"); return; }
+    if(!sound){ dlgFail("errPickSound"); return; }
+    if(!Number.isInteger(rings) || rings < 1){ dlgFail("errRings"); return; }
+    dlgError.hidden = true;
+    busy = true; bellAddBtn.disabled = true;
     try{
-      await postSignalAdd(dt, time, label, sound);
-      setBanner(`<b>OK.</b> Yangi signal (${time}) ${DAY_TYPE_LABELS[dt]||dt} turiga qo'shildi.`, false);
-      sigTime.value = ""; sigLabel.value = ""; sigSoundCustom.value = ""; sigSoundCustom.hidden = true;
-      sigSoundSelect.value = audioFiles[0] || CUSTOM_SOUND;
+      await postJson("/api/event/add", {date, time, label, sound, rings, volume});
+      notify("okEvAdded", {date: esc(fmtDateHuman(date)), time: esc(time)}, false);
+      bellTime.value = ""; bellLabel.value = ""; bellRings.value = "1";
+      bellVolume.value = "100"; syncVolume();
+      calSel = date;
+      closeBellDialog();
     }catch(e){
-      setBanner(`<b>Xato:</b> ${e.message}`, true);
+      dlgFail("errMsg", {msg: esc(e.message)});
     }
-    sigBusy = false;
-    renderAll(); renderSigPanel();
+    busy = false; bellAddBtn.disabled = false;
+    renderAll();
+  }
+  document.getElementById("openAddBtn").addEventListener("click", ()=>openBellDialog(null));
+  document.getElementById("bellDialogClose").addEventListener("click", closeBellDialog);
+  document.getElementById("bellCancelBtn").addEventListener("click", closeBellDialog);
+  // Oyna tashqarisini (qorong'i fon) bosganda yopish
+  bellDialog.addEventListener("mousedown", (e)=>{ if(e.target === bellDialog) closeBellDialog(); });
+
+  // Ovoz balandligi slayderi: foizni ko'rsatadi va eshitib ko'rilayotgan ovozni ham darrov o'zgartiradi
+  function syncVolume(){
+    const v = Number(bellVolume.value);
+    bellVolumeVal.textContent = v + "%";
+    previewAudio.volume = v / 100;
+  }
+  bellVolume.addEventListener("input", syncVolume);
+  syncVolume();
+
+  let previewUrl = null;
+  bellPreviewBtn.addEventListener("click", async ()=>{
+    const sound = currentSoundValue();
+    if(!sound){ dlgFail("errPickSoundFirst"); return; }
+    dlgError.hidden = true;
+    try{
+      // /audios/ ham login talab qiladi, <audio src> esa sarlavha yubora olmaydi - shuning uchun blob orqali
+      const r = await api("/audios/" + sound.split("/").map(encodeURIComponent).join("/"));
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      const blob = await r.blob();
+      if(previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(blob);
+      previewAudio.src = previewUrl;
+      previewAudio.volume = Number(bellVolume.value) / 100;
+      await previewAudio.play();
+    }catch(e){
+      dlgFail("errPlay", {sound: esc(sound)});
+    }
+  });
+
+  bellAddBtn.addEventListener("click", async ()=>{
+    if(dialogKind === "event") return saveEvent();
+    const time = bellTime.value;
+    const label = bellLabel.value.trim();
+    const sound = currentSoundValue();
+    const rings = Number(bellRings.value || 1);
+    const volume = Number(bellVolume.value || 100);
+    const weeksRaw = bellWeeks.value.trim();
+    const weeks = weeksRaw === "" ? null : Number(weeksRaw);
+    if(!time){ dlgFail("errPickTime"); return; }
+    if(!selectedDays.size){ dlgFail("errPickDays"); return; }
+    if(!sound){ dlgFail("errPickSound"); return; }
+    if(!Number.isInteger(rings) || rings < 1){ dlgFail("errRings"); return; }
+    if(weeks !== null && (!Number.isInteger(weeks) || weeks < 1)){ dlgFail("errWeeks"); return; }
+    dlgError.hidden = true;
+    busy = true; bellAddBtn.disabled = true; renderBellList();
+    try{
+      const payload = {time, label, sound, days: WD_KEYS.filter(k=>selectedDays.has(k)), rings, volume, weeks};
+      if(editingBell){
+        await postJson("/api/bell/update", {...payload, id: editingBell.id});
+        notify("okUpdated", {time}, false);
+      } else {
+        await postJson("/api/bell/add", payload);
+        notify("okAdded", {time}, false);
+        bellTime.value = ""; bellLabel.value = "";
+        bellRings.value = "1"; bellWeeks.value = "";
+        bellVolume.value = "100"; syncVolume();
+      }
+      closeBellDialog();
+    }catch(e){
+      dlgFail("errMsg", {msg: esc(e.message)});
+    }
+    busy = false; bellAddBtn.disabled = false;
+    renderAll();
+  });
+
+  // ---------- Kalendar: oylik ko'rinish, dam olish kunlari, bir martalik qo'ng'iroqlar ----------
+  const calGrid = document.getElementById("calGrid");
+  const calTitle = document.getElementById("calTitle");
+  const calDayTitle = document.getElementById("calDayTitle");
+  const calDayCount = document.getElementById("calDayCount");
+  const calDayHoliday = document.getElementById("calDayHoliday");
+  const calDayList = document.getElementById("calDayList");
+  const calAddEventBtn = document.getElementById("calAddEventBtn");
+  const calAddHolBtn = document.getElementById("calAddHolBtn");
+  const holList = document.getElementById("holList");
+  const holCount = document.getElementById("holCount");
+  const evList = document.getElementById("evList");
+  const evCount = document.getElementById("evCount");
+  let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1); // ko'rsatilayotgan oyning 1-kuni
+  let calSel = dateStrOf(new Date());                                           // tanlangan kun (YYYY-MM-DD)
+
+  function fmtDateHuman(dstr){
+    const d = parseDateStr(dstr);
+    return d.getDate() + " " + raw("months")[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
+  }
+  function fmtShortDate(dstr){ const d = parseDateStr(dstr); return pad(d.getDate()) + "." + pad(d.getMonth() + 1); }
+  function holRange(h){ const e = h.end || h.start; return h.start === e ? fmtDateHuman(h.start) : fmtDateHuman(h.start) + " – " + fmtDateHuman(e); }
+  function holDays(h){ return Math.round((parseDateStr(h.end || h.start) - parseDateStr(h.start)) / 86400000) + 1; }
+
+  function renderCalendar(){
+    if(!config) return;
+    const y = calMonth.getFullYear(), m = calMonth.getMonth();
+    calTitle.textContent = raw("monthsNom")[m] + " " + y;
+    const first = new Date(y, m, 1);
+    const lead = (first.getDay() + 6) % 7;                 // hafta dushanbadan boshlanadi
+    const cells = Math.ceil((lead + new Date(y, m + 1, 0).getDate()) / 7) * 7;
+    const todayStr = dateStrOf(new Date());
+    let html = raw("wdShort").map((w, i)=>`<div class="cal-wd${i >= 5 ? " wknd" : ""}">${esc(w)}</div>`).join("");
+    for(let i = 0; i < cells; i++){
+      const d = addDays(first, i - lead);
+      const ds = dateStrOf(d);
+      const hol = holidayOn(d);
+      const list = bellsOn(d);
+      const cls = ["cal-day"];
+      if(d.getMonth() !== m) cls.push("other");
+      if(d.getDay() === 0 || d.getDay() === 6) cls.push("wknd");   // shanba, yakshanba
+      if(ds === todayStr) cls.push("today");
+      else if(ds < todayStr) cls.push("past");
+      if(ds === calSel) cls.push("sel");
+      if(hol) cls.push(hol.public ? "pub" : "hol");
+      // Nuqtalar: kulrang - jadvaldagi qo'ng'iroqlar bor, to'q sariq - bir martalik qo'ng'iroq bor
+      const marks = (list.some(b=>!b.oneTime) ? '<i class="mk b"></i>' : "") + (list.some(b=>b.oneTime) ? '<i class="mk e"></i>' : "");
+      const tip = [hol ? hol.label : "", list.length ? t("nBells", {n: list.length}) : ""].filter(Boolean).join(" · ");
+      html += `<button type="button" class="${cls.join(" ")}" data-date="${ds}"${tip ? ` title="${esc(tip)}"` : ""}>
+        <span class="num">${d.getDate()}</span><span class="marks">${marks}</span>
+      </button>`;
+    }
+    calGrid.innerHTML = html;
+    renderCalDay();
+    renderHolList();
+    renderPubList();
+    renderEvList();
+  }
+
+  // Tanlangan kun: dam olish kunimi, qaysi qo'ng'iroqlar chalinadi
+  function renderCalDay(){
+    const d = parseDateStr(calSel);
+    const todayStr = dateStrOf(new Date());
+    // Boshqa yil bo'lsa - yil oydan keyin: "1 yanvar 2027, Juma"
+    const monthText = raw("months")[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
+    calDayTitle.textContent = t("dateFmt", {d: d.getDate(), m: monthText, w: raw("wdFull")[wdIndex(weekdayKeyOf(d))]});
+    const hol = holidayOn(d);
+    calDayHoliday.hidden = !hol;
+    calDayHoliday.innerHTML = !hol ? ""
+      : hol.public ? t("calPublicNote", {label: esc(hol.label)}) + (hol.approx ? "<br>" + esc(t("calApprox")) : "")
+      : t("calHolidayNote", {label: esc(hol.label)});
+    const list = bellsOn(d);
+    calDayCount.textContent = list.length ? t("nBells", {n: list.length}) : "";
+    calDayList.innerHTML = list.length ? list.map(b=>`<div class="tl-row">
+        <div class="t mono">${esc(b.time)}</div><div class="dot"></div>
+        <div><div>${esc(b.label)}</div><div class="snd mono">${esc(soundLabel(b.sound))}</div></div>
+        <div class="tl-right">${oneTimeBadge(b)}${ringsBadge(b)}${volumeBadge(b)}</div>
+      </div>`).join("") : `<div class="log-empty">${esc(t("calNoBells"))}</div>`;
+    const past = calSel < todayStr;
+    calAddEventBtn.disabled = past;
+    calAddHolBtn.disabled = past || !!hol;
+  }
+
+  function renderHolList(){
+    const todayStr = dateStrOf(new Date());
+    const list = getHolidays().filter(h => h && (h.end || h.start) >= todayStr);
+    holCount.textContent = list.length ? String(list.length) : "";
+    holList.innerHTML = list.length ? list.map(h=>`<div class="bell-row" data-id="${esc(h.id)}">
+        <div class="t date mono">${esc(fmtShortDate(h.start))}</div>
+        <div><div>${esc(h.label)}</div><div class="snd">${esc(holRange(h))} · ${esc(t("holDays", {n: holDays(h)}))}</div></div>
+        <div class="meta"></div>
+        <div class="bell-actions"><button type="button" class="sig-del" title="${esc(t("delTitle"))}">&times;</button></div>
+      </div>`).join("") : `<div class="log-empty">${esc(t("holEmpty"))}</div>`;
+  }
+
+  // Keyingi davlat bayramlari (bugundan boshlab 6 tasi) va "hisobga olish" tanlovi
+  const pubToggle = document.getElementById("pubToggle");
+  const pubList = document.getElementById("pubList");
+  function renderPubList(){
+    pubToggle.checked = publicHolidaysEnabled();
+    const out = [];
+    const today = new Date();
+    for(let off = 0; off < 400 && out.length < 6; off++){
+      const h = publicHolidayOn(addDays(today, off));
+      if(h) out.push(h);
+    }
+    pubList.classList.toggle("off", !publicHolidaysEnabled());
+    pubList.innerHTML = out.map(h=>`<div class="pub-row">
+        <span class="pd mono">${esc(fmtShortDate(h.start))}</span>
+        <span class="pl">${esc(h.label)}</span>
+        ${h.approx ? `<span class="rings-badge" title="${esc(t("calApprox"))}">${esc(t("approxTag"))}</span>` : ""}
+      </div>`).join("");
+  }
+  pubToggle.addEventListener("change", async ()=>{
+    const enabled = pubToggle.checked;
+    try{
+      await postJson("/api/settings/public-holidays", {enabled});
+      notify(enabled ? "okPubOn" : "okPubOff", null, false);
+    }catch(e){ notifyError(e); pubToggle.checked = !enabled; }
+    renderAll();
+  });
+
+  function renderEvList(){
+    const todayStr = dateStrOf(new Date());
+    const list = getEvents().filter(e => e && e.date >= todayStr);
+    evCount.textContent = list.length ? String(list.length) : "";
+    evList.innerHTML = list.length ? list.map(e=>`<div class="bell-row" data-id="${esc(e.id)}">
+        <div class="t date mono">${esc(fmtShortDate(e.date))}<br>${esc(e.time)}</div>
+        <div><div>${esc(e.label)}</div><div class="snd mono">${esc(fmtDateHuman(e.date))} · ${esc(soundLabel(e.sound))}</div></div>
+        <div class="meta">${ringsBadge(e)}${volumeBadge(e)}</div>
+        <div class="bell-actions"><button type="button" class="sig-del" title="${esc(t("delTitle"))}">&times;</button></div>
+      </div>`).join("") : `<div class="log-empty">${esc(t("evEmpty"))}</div>`;
+  }
+
+  calGrid.addEventListener("click", (e)=>{
+    const cell = e.target.closest(".cal-day");
+    if(!cell) return;
+    calSel = cell.dataset.date;
+    const d = parseDateStr(calSel);
+    if(d.getMonth() !== calMonth.getMonth()) calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    renderCalendar();
+  });
+  document.getElementById("calPrev").addEventListener("click", ()=>{
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderCalendar();
+  });
+  document.getElementById("calNext").addEventListener("click", ()=>{
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderCalendar();
+  });
+  document.getElementById("calTodayBtn").addEventListener("click", ()=>{
+    const now = new Date();
+    calMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    calSel = dateStrOf(now);
+    renderCalendar();
+  });
+  calAddEventBtn.addEventListener("click", ()=> openEventDialog(calSel));
+  calAddHolBtn.addEventListener("click", ()=> openHolDialog(calSel, calSel));
+  document.getElementById("holAddBtn").addEventListener("click", ()=>{
+    const todayStr = dateStrOf(new Date());
+    const start = calSel >= todayStr ? calSel : todayStr;
+    openHolDialog(start, start);
+  });
+
+  holList.addEventListener("click", async (e)=>{
+    if(!e.target.closest(".sig-del")) return;
+    const h = getHolidays().find(x=>x.id === e.target.closest(".bell-row").dataset.id);
+    if(!h) return;
+    const ok = await askBox({title: t("delHolTitle"), html: t("confirmDelHol", {label: esc(h.label), range: esc(holRange(h))}),
+      okLabel: t("delBtn"), danger: true});
+    if(!ok) return;
+    try{ await postJson("/api/holiday/remove", {id: h.id}); notify("okHolDeleted", null, false); }
+    catch(err){ notifyError(err); }
+    renderAll();
+  });
+
+  evList.addEventListener("click", async (e)=>{
+    if(!e.target.closest(".sig-del")) return;
+    const ev = getEvents().find(x=>x.id === e.target.closest(".bell-row").dataset.id);
+    if(!ev) return;
+    const ok = await askBox({title: t("delEvTitle"),
+      html: t("confirmDelEv", {date: esc(fmtDateHuman(ev.date)), time: esc(ev.time), label: esc(ev.label)}) + "<br>" + esc(t("cannotUndo")),
+      okLabel: t("delBtn"), danger: true});
+    if(!ok) return;
+    try{ await postJson("/api/event/remove", {id: ev.id}); notify("okEvDeleted", null, false); }
+    catch(err){ notifyError(err); }
+    renderAll();
+  });
+
+  // Dam olish kuni / ta'til oynasi
+  const holDialog = document.getElementById("holDialog");
+  const holLabelIn = document.getElementById("holLabel");
+  const holStart = document.getElementById("holStart");
+  const holEnd = document.getElementById("holEnd");
+  const holSave = document.getElementById("holSave");
+  function openHolDialog(start, end){
+    const todayStr = dateStrOf(new Date());
+    holLabelIn.value = "";
+    holStart.min = todayStr;
+    holStart.value = start;
+    holEnd.min = start;
+    holEnd.value = end;
+    holDialog.showModal();
+    holLabelIn.focus();
+  }
+  holStart.addEventListener("change", ()=>{
+    holEnd.min = holStart.value;
+    if(!holEnd.value || holEnd.value < holStart.value) holEnd.value = holStart.value;
+  });
+  const closeHol = ()=> holDialog.close();
+  document.getElementById("holCancel").addEventListener("click", closeHol);
+  document.getElementById("holClose").addEventListener("click", closeHol);
+  holDialog.addEventListener("mousedown", (e)=>{ if(e.target === holDialog) closeHol(); });
+  holSave.addEventListener("click", async ()=>{
+    if(!holStart.value || !holEnd.value){ notify("errHolDates", null, true); return; }
+    holSave.disabled = true;
+    try{
+      await postJson("/api/holiday/add", {label: holLabelIn.value.trim(), start: holStart.value, end: holEnd.value});
+      notify("okHolAdded", null, false);
+      calSel = holStart.value;
+      closeHol();
+    }catch(err){ notifyError(err); }
+    holSave.disabled = false;
+    renderAll();
   });
 
   // ---------- jonli e'lon (mikrofon -> speaker) ----------
@@ -688,24 +2359,29 @@
   const announceLabel = document.getElementById("announceLabel");
   let announceRunning = false;
   let announceBusy = false;
+  let lastAnnounceError = null;
 
   async function fetchAnnounceStatus(){
-    const r = await fetch("/api/announce/status");
-    if(!r.ok) throw new Error("holat so'rovi xato: " + r.status);
+    const r = await api("/api/announce/status");
+    if(!r.ok) throw new Error("HTTP " + r.status);
     return r.json();
   }
 
   function renderAnnounceBtn(){
     announceBtn.disabled = announceBusy;
     announceBtn.classList.toggle("live", announceRunning);
-    announceLabel.textContent = announceRunning ? "Jonli e'lon ketmoqda... (to'xtatish)" : "Jonli e'lon";
+    const label = t(announceRunning ? "announceOn" : "announce");
+    announceLabel.textContent = label;
+    announceBtn.title = label;
+    announceBtn.setAttribute("aria-label", label);
   }
 
   async function pollAnnounceStatus(){
     try{
       const st = await fetchAnnounceStatus();
       announceRunning = !!st.running;
-      if(st.error) setBanner(`<b>Jonli e'lon xatosi:</b> ${st.error}`, true);
+      if(st.error && st.error !== lastAnnounceError) notify("annErr", {msg: esc(st.error)}, true);
+      lastAnnounceError = st.error || null;
       if(!announceBusy) renderAnnounceBtn();
     }catch(e){ /* jim */ }
   }
@@ -714,75 +2390,462 @@
     announceBusy = true; renderAnnounceBtn();
     try{
       const st = announceRunning
-        ? await (await fetch("/api/announce/stop", {method:"POST"})).json()
-        : await (await fetch("/api/announce/start", {method:"POST"})).json();
+        ? await (await api("/api/announce/stop", {method:"POST"})).json()
+        : await (await api("/api/announce/start", {method:"POST"})).json();
       announceRunning = !!st.running;
-      if(st.error) setBanner(`<b>Jonli e'lon xatosi:</b> ${st.error}`, true);
-      else setBanner(announceRunning
-        ? "<b>Jonli e'lon boshlandi.</b> Mikrofoningizga gapiring - ovoz shu kompyuterga ulangan speakerlardan eshitiladi."
-        : "<b>Jonli e'lon to'xtatildi.</b>", false);
+      lastAnnounceError = st.error || null;
+      if(st.error) notify("annErr", {msg: esc(st.error)}, true);
+      else notify(announceRunning ? "annStarted" : "annStopped", null, false);
     }catch(e){
-      setBanner(`<b>Xato:</b> ${e.message}`, true);
+      notifyError(e);
     }
     announceBusy = false; renderAnnounceBtn();
   });
 
-  setInterval(pollAnnounceStatus, 3000);
+  setInterval(()=>{ if(authed) pollAnnounceStatus(); }, 3000);
 
-  // ---------- mode controls ----------
-  const modeLive = document.getElementById("modeLive");
-  const modeSim = document.getElementById("modeSim");
-  const simRow = document.getElementById("simRow");
-  const simSlider = document.getElementById("simSlider");
-  const simTimeLabel = document.getElementById("simTimeLabel");
-  const simPlay = document.getElementById("simPlay");
-  const playIcon = document.getElementById("playIcon");
-  const playLabel = document.getElementById("playLabel");
+  // ---------- til va mavzu ----------
+  const themeBtn = document.getElementById("themeBtn");
+  const langButtons = document.querySelectorAll("#langSeg button, .gate-lang button");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 
-  modeLive.addEventListener("click", ()=>{
-    mode = "live"; modeLive.classList.add("active"); modeSim.classList.remove("active");
-    simRow.hidden = true; stopSimPlay(); renderAll();
-  });
-  modeSim.addEventListener("click", ()=>{
-    mode = "sim"; modeSim.classList.add("active"); modeLive.classList.remove("active");
-    simRow.hidden = false;
-    simMinutes = getMoment().minutes;
-    simSlider.value = simMinutes;
-    simTimeLabel.textContent = minutesToHHMM(simMinutes);
-    renderAll();
-  });
-  simSlider.addEventListener("input", ()=>{
-    simMinutes = Number(simSlider.value);
-    simTimeLabel.textContent = minutesToHHMM(simMinutes);
-    renderMain();
-  });
-  function stopSimPlay(){
-    simPlaying = false;
-    if(simTimer){ clearInterval(simTimer); simTimer = null; }
-    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    playLabel.textContent = "O'ynash";
+  function currentTheme(){
+    const explicit = document.documentElement.getAttribute("data-theme");
+    if(explicit === "light" || explicit === "dark") return explicit;
+    return prefersDark.matches ? "dark" : "light";
   }
-  simPlay.addEventListener("click", ()=>{
-    if(simPlaying){ stopSimPlay(); return; }
-    simPlaying = true;
-    playIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
-    playLabel.textContent = "To'xtatish";
-    simTimer = setInterval(()=>{
-      simMinutes = (simMinutes + 1) % 1440;
-      simSlider.value = simMinutes;
-      simTimeLabel.textContent = minutesToHHMM(simMinutes);
-      renderMain();
-    }, 120);
+
+  function renderThemeBtn(){
+    const label = t(currentTheme() === "dark" ? "themeToLight" : "themeToDark");
+    themeBtn.title = label;
+    themeBtn.setAttribute("aria-label", label);
+  }
+
+  themeBtn.addEventListener("click", ()=>{
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try{ localStorage.setItem("ois-theme", next); }catch(e){}
+    renderThemeBtn();
+  });
+  // Foydalanuvchi mavzuni qo'lda tanlamagan bo'lsa, tizim mavzusi o'zgarganda tugma matnini yangilash
+  if(prefersDark.addEventListener) prefersDark.addEventListener("change", renderThemeBtn);
+
+  function applyStaticTexts(){
+    document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-html]").forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
+    document.querySelectorAll("[data-i18n-title]").forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+  }
+
+  function applyLang(){
+    document.documentElement.lang = lang;
+    document.title = "OIS School Bell";
+    langButtons.forEach(b=>b.classList.toggle("active", b.dataset.lang === lang));
+    applyStaticTexts();
+    if(audioLoaded) renderSoundOptions();
+    renderAiIntroOptions(); renderAiTones(); renderAiOps(); renderAiConf(); renderAiSuggest();
+    renderDayChips();
+    renderThemeBtn();
+    renderAnnounceBtn();
+    renderLog();
+    renderAll();
+    renderAccount();
+    renderGate();
+    renderLibrary();
+    renderLibStatus();
+  }
+
+  langButtons.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if(btn.dataset.lang === lang) return;
+      lang = btn.dataset.lang;
+      try{ localStorage.setItem("ois-lang", lang); }catch(e){}
+      applyLang();
+    });
+  });
+
+  // ---------- Supabase: akkaunt va musiqa kutubxonasi ----------
+  const accountBody = document.getElementById("accountBody");
+  const libToolbar = document.getElementById("libToolbar");
+  const libKindSel = document.getElementById("libKindSel");
+  wireCustomSelect(libKindSel);
+  const libUploadBtn = document.getElementById("libUploadBtn");
+  const libFileInput = document.getElementById("libFileInput");
+  const libStatus = document.getElementById("libStatus");
+  const libList = document.getElementById("libList");
+  const libCount = document.getElementById("libCount");
+  const libAudio = new Audio();
+  let sb = null;            // Supabase klienti
+  let sbEnabled = false;    // .env da sozlanganmi
+  let sbSession = null;
+  let sbInitDone = false;
+  let sounds = [];          // sounds jadvali (Supabase)
+  let libBusy = "";         // yuklash/o'chirish jarayoni matni
+  let libSyncState = null;  // serverning lokal nusxa holati
+  let playingId = null;
+
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const ICON_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  const ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+
+  function fmtSize(b){ return (b / 1048576).toFixed(b >= 1048576 * 10 ? 0 : 1) + " MB"; }
+  function fmtDur(s){
+    if(s === null || s === undefined) return "";
+    const m = Math.floor(s / 60), r = Math.round(s % 60);
+    return m + ":" + pad(r === 60 ? 59 : r);
+  }
+  function soundLocalFile(row){
+    return "library/" + row.id + (/\.wav$/i.test(row.storage_path) ? ".wav" : ".mp3");
+  }
+  function kindOptions(selected){
+    return KINDS.map(k=>`<option value="${k}" ${k === selected ? "selected" : ""}>${esc(t("kind_" + k))}</option>`).join("");
+  }
+
+  // ---------- Kirish darvozasi ----------
+  // Panel faqat Supabase'da admin roli bor foydalanuvchi kirgandan keyin ochiladi.
+  // (Server ham har bir so'rovda shuni qayta tekshiradi - bu faqat qulaylik uchun ekran.)
+  const gateBody = document.getElementById("gateBody");
+  let authed = false;       // panel ochiq va ishlayaptimi
+  let appStarted = false;   // birinchi ochilishdagi yuklashlar bajarilganmi
+
+  // Supabase ichida har bir foydalanuvchi email bilan saqlanadi. Panelda esa oddiy login (username) ishlatiladi:
+  // "admin" -> "admin@bell.local". Bu domen hech qayerda ko'rsatilmaydi va xat yuborilmaydi.
+  const LOGIN_DOMAIN = "@bell.local";
+  const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{1,31}$/;
+  function usernameToEmail(u){
+    const name = String(u || "").trim().toLowerCase();
+    return USERNAME_RE.test(name) ? name + LOGIN_DOMAIN : null;
+  }
+  function displayName(user){
+    const e = (user && user.email) || "";
+    return e.endsWith(LOGIN_DOMAIN) ? e.slice(0, -LOGIN_DOMAIN.length) : e;
+  }
+
+  function isAdminSession(s){
+    return !!(s && s.user && s.user.app_metadata && s.user.app_metadata.role === "admin");
+  }
+
+  function setLocked(locked){
+    document.body.classList.toggle("locked", locked);
+  }
+
+  async function startApp(){
+    appStarted = true;
+    await pollSchedule();
+    await pollLog();
+    await pollAnnounceStatus();
+    await fetchAudioFiles();
+    await fetchPublicHolidays();
+    renderAll();
+  }
+
+  async function applyAuthState(){
+    if(sbSession && !isAdminSession(sbSession)){
+      // Login to'g'ri, lekin admin emas: darrov chiqaramiz
+      authed = false;
+      setLocked(true);
+      try{ await sb.auth.signOut({scope: "local"}); }catch(e){}
+      notify("errNotAdmin", null, true);
+      return;
+    }
+    if(isAdminSession(sbSession)){
+      authed = true;
+      setLocked(false);
+      renderAccount();
+      if(!appStarted) await startApp();
+      await loadSounds();
+    } else {
+      authed = false;
+      setLocked(true);
+      libAudio.pause();
+      previewAudio.pause();
+      sounds = [];
+      renderGate();
+    }
+  }
+
+  async function initSupabase(){
+    try{
+      const r = await fetch("/api/config");
+      const cfg = await r.json();
+      sbEnabled = !!cfg.enabled;
+      if(sbEnabled && window.supabase){
+        sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
+          auth: { persistSession: true, autoRefreshToken: true, storageKey: "ois-sb-auth" }
+        });
+        const { data } = await sb.auth.getSession();
+        sbSession = data.session;
+        sb.auth.onAuthStateChange((ev, session)=>{
+          sbSession = session;
+          if(ev === "TOKEN_REFRESHED" || ev === "USER_UPDATED") return; // holat o'zgarmaydi, faqat token yangilandi
+          setTimeout(applyAuthState, 0);
+        });
+      }
+    }catch(e){ /* server yoki internet yo'q */ }
+    sbInitDone = true;
+    await applyAuthState();
+  }
+
+  function renderGate(){
+    if(!sbInitDone){ gateBody.innerHTML = ""; return; }
+    if(!sbEnabled){ gateBody.innerHTML = `<div class="acc-note">${t("accNotConfigured")}</div>`; return; }
+    if(!sb){ gateBody.innerHTML = `<div class="acc-note">${t("accNoLib")}</div>`; return; }
+    // Parol maydoni qayta chizilib, yozilayotgan matn yo'qolmasligi uchun (til almashganda) oldingi qiymatlarni saqlaymiz
+    const prevEmail = (document.getElementById("loginEmail") || {}).value || "";
+    gateBody.innerHTML = `<form class="gate-form" id="loginForm">
+        <h2>${t("loginTitle")}</h2>
+        <div class="field"><label for="loginEmail">${t("accUsername")}</label><input type="text" id="loginEmail" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required autofocus></div>
+        <div class="field"><label for="loginPass">${t("accPassword")}</label><input type="password" id="loginPass" autocomplete="current-password" required></div>
+        <button type="submit" class="playbtn primary" id="loginBtn">${t("accLoginBtn")}</button>
+      </form>`;
+    document.getElementById("loginEmail").value = prevEmail;
+    document.getElementById("loginForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const btn = document.getElementById("loginBtn");
+      btn.disabled = true;
+      try{
+        const email = usernameToEmail(document.getElementById("loginEmail").value);
+        const { error } = email
+          ? await sb.auth.signInWithPassword({ email, password: document.getElementById("loginPass").value })
+          : { error: { message: "Invalid login credentials" } };
+        if(error){
+          if(/invalid|credentials/i.test(error.message)) notify("errLogin", null, true);
+          else if(/fetch|network/i.test(error.message)) notify("errLoginNet", null, true);
+          else notify("errMsg", {msg: esc(error.message)}, true);
+          const pass = document.getElementById("loginPass");
+          if(pass){ pass.value = ""; pass.focus(); }
+        }
+      }finally{
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // Sozlamalar sahifasidagi akkaunt kartochkasi (faqat kirgandan keyin ko'rinadi)
+  function renderAccount(){
+    if(!sbInitDone || !sb || !sbSession){ accountBody.innerHTML = ""; return; }
+    accountBody.innerHTML = `<div class="acc-info"><span>${t("accSignedIn", {email: esc(displayName(sbSession.user))})}</span>
+      <button type="button" class="playbtn" id="logoutBtn">${t("accLogoutBtn")}</button></div>`;
+    document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+      await sb.auth.signOut({scope: "local"});
+      notify("okLoggedOut", null, false);
+    });
+  }
+
+  async function loadSounds(){
+    if(sb && sbSession){
+      const { data, error } = await sb.from("sounds").select("*").order("created_at", {ascending: false});
+      if(error){ sounds = []; notify("errMsg", {msg: esc(error.message)}, true); }
+      else sounds = data || [];
+    } else {
+      sounds = [];
+    }
+    renderLibrary();
+    refreshLibraryStatus();
+  }
+
+  function renderLibrary(){
+    const signedIn = !!(sb && sbSession);
+    libToolbar.hidden = !signedIn;
+    libKindSel.innerHTML = kindOptions(libKindSel.value || "music");
+    refreshCsel(libKindSel);
+    libUploadBtn.disabled = !!libBusy;
+    libCount.textContent = signedIn && sounds.length ? t("nFiles", {n: sounds.length}) : "";
+    if(!signedIn){
+      libList.innerHTML = `<div class="log-empty">${t("libNeedLogin")}</div>`;
+      return;
+    }
+    if(!sounds.length){
+      libList.innerHTML = `<div class="log-empty">${t("libEmpty")}</div>`;
+      return;
+    }
+    libList.innerHTML = sounds.map(r=>{
+      const playing = playingId === r.id;
+      const meta = [fmtSize(r.size_bytes), fmtDur(r.duration_seconds)].filter(Boolean).join(" · ");
+      return `<div class="lib-row" data-id="${esc(r.id)}">
+        <button type="button" class="lib-play" data-act="play" title="${esc(t(playing ? "libStop" : "libPlay"))}">${playing ? ICON_STOP : ICON_PLAY}</button>
+        <div><div class="lib-name">${esc(r.name)}</div><div class="lib-meta">${esc(meta)}</div></div>
+        <select class="kind-sel" data-act="kind">${kindOptions(r.kind)}</select>
+        <div class="lib-actions">
+          <button type="button" class="icon-plain" data-act="rename" title="${esc(t("libRename"))}">${ICON_EDIT}</button>
+          <button type="button" class="icon-plain danger" data-act="delete" title="${esc(t("libDelete"))}">${ICON_TRASH}</button>
+        </div>
+      </div>`;
+    }).join("");
+    libList.querySelectorAll("select.kind-sel").forEach(wireCustomSelect);
+  }
+
+  function renderLibStatus(){
+    if(libBusy){ libStatus.className = "lib-status"; libStatus.textContent = libBusy; return; }
+    const st = libSyncState;
+    if(!st){ libStatus.textContent = ""; return; }
+    if(st.sync && st.sync.lastError){
+      libStatus.className = "lib-status err";
+      libStatus.textContent = t("libSyncErr", {msg: st.sync.lastError});
+    } else {
+      libStatus.className = "lib-status";
+      libStatus.textContent = t("libSyncOk", {n: (st.sounds || []).length});
+    }
+  }
+
+  async function refreshLibraryStatus(){
+    try{
+      const r = await api("/api/library");
+      libSyncState = await r.json();
+    }catch(e){ libSyncState = null; }
+    renderLibStatus();
+  }
+
+  // Yangi/o'zgargan fayllarni maktab kompyuteriga (lokal keshga) darrov tushirish
+  async function syncLocalLibrary(){
+    libBusy = t("libSyncing"); renderLibStatus();
+    try{
+      const r = await api("/api/library/sync", {method: "POST"});
+      libSyncState = await r.json();
+    }catch(e){ libSyncState = null; }
+    libBusy = "";
+    renderLibStatus();
+    await fetchAudioFiles();
+  }
+
+  function audioDuration(file){
+    return new Promise(resolve=>{
+      const a = new Audio();
+      const url = URL.createObjectURL(file);
+      const done = (v)=>{ URL.revokeObjectURL(url); resolve(v); };
+      a.preload = "metadata";
+      a.onloadedmetadata = ()=>done(isFinite(a.duration) ? Math.round(a.duration * 100) / 100 : null);
+      a.onerror = ()=>done(null);
+      setTimeout(()=>done(null), 4000);
+      a.src = url;
+    });
+  }
+
+  // opts.kind - turini majburan belgilash (masalan AI e'lon -> "announcement"); bo'lmasa - toolbardagi tanlov
+  async function uploadSounds(files, opts){
+    if(!sb || !sbSession || !files.length) return 0;
+    const kind = (opts && opts.kind) || libKindSel.value || "music";
+    let ok = 0;
+    for(let i = 0; i < files.length; i++){
+      const f = files[i];
+      if(!/\.(mp3|wav)$/i.test(f.name)){ notify("errMsg", {msg: t("errFileType", {name: esc(f.name)})}, true); continue; }
+      if(f.size > MAX_LIB_BYTES){ notify("errMsg", {msg: t("errFileSize", {name: esc(f.name)})}, true); continue; }
+      libBusy = t("libUploading", {i: i + 1, n: files.length, name: f.name});
+      renderLibStatus(); libUploadBtn.disabled = true;
+      let uploadedPath = null;
+      try{
+        const id = crypto.randomUUID();
+        const ext = /\.wav$/i.test(f.name) ? "wav" : "mp3";
+        const now = new Date();
+        const path = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${id}.${ext}`;
+        const contentType = ext === "wav" ? "audio/wav" : "audio/mpeg";
+        const duration = await audioDuration(f);
+        const up = await sb.storage.from("sounds").upload(path, f, {contentType, upsert: false});
+        if(up.error) throw up.error;
+        uploadedPath = path;
+        const ins = await sb.from("sounds").insert({
+          id, name: f.name.replace(/\.[^.]+$/, ""), kind, storage_path: path,
+          mime_type: contentType, size_bytes: f.size, duration_seconds: duration
+        });
+        if(ins.error) throw ins.error;
+        ok++;
+      }catch(e){
+        if(uploadedPath) await sb.storage.from("sounds").remove([uploadedPath]).catch(()=>{});
+        notify("errMsg", {msg: esc(f.name) + ": " + esc((e && e.message) || String(e))}, true);
+      }
+    }
+    libBusy = "";
+    if(ok) notify("okUploaded", {n: ok}, false);
+    await loadSounds();
+    if(ok) syncLocalLibrary();
+    return ok;
+  }
+
+  function stopLibAudio(){
+    libAudio.pause();
+    playingId = null;
+  }
+  libAudio.addEventListener("ended", ()=>{ playingId = null; renderLibrary(); });
+
+  async function playSound(row){
+    if(playingId === row.id){ stopLibAudio(); renderLibrary(); return; }
+    stopLibAudio();
+    const { data, error } = await sb.storage.from("sounds").createSignedUrl(row.storage_path, 600);
+    if(error){ notify("errMsg", {msg: esc(error.message)}, true); return; }
+    libAudio.src = data.signedUrl;
+    playingId = row.id;
+    renderLibrary();
+    libAudio.play().catch(e=>{ playingId = null; renderLibrary(); notify("errMsg", {msg: esc(e.message)}, true); });
+  }
+
+  libUploadBtn.addEventListener("click", ()=>libFileInput.click());
+  libFileInput.addEventListener("change", ()=>{
+    const files = [...libFileInput.files];
+    libFileInput.value = "";
+    uploadSounds(files);
+  });
+
+  libList.addEventListener("change", async (e)=>{
+    const sel = e.target.closest('select[data-act="kind"]'); if(!sel) return;
+    const id = sel.closest(".lib-row").dataset.id;
+    const { error } = await sb.from("sounds").update({kind: sel.value}).eq("id", id);
+    if(error) notify("errMsg", {msg: esc(error.message)}, true);
+    await loadSounds();
+    syncLocalLibrary();
+  });
+
+  libList.addEventListener("click", async (e)=>{
+    const btn = e.target.closest("button[data-act]"); if(!btn) return;
+    const row = sounds.find(x=>x.id === btn.closest(".lib-row").dataset.id); if(!row) return;
+    const act = btn.dataset.act;
+    if(act === "play"){ playSound(row); return; }
+    if(act === "rename"){
+      const name = ((await askBox({
+        title: t("renameTitle"), html: esc(t("libRenamePrompt")), okLabel: t("saveBtn"), input: row.name,
+      })) || "").trim();
+      if(!name || name === row.name) return;
+      const { error } = await sb.from("sounds").update({name}).eq("id", row.id);
+      if(error) notify("errMsg", {msg: esc(error.message)}, true);
+      await loadSounds();
+      syncLocalLibrary();
+      return;
+    }
+    if(act === "delete"){
+      const used = getBells().filter(b=>b.sound === soundLocalFile(row)).length;
+      let html = t("libConfirmDelete", {name: esc(row.name)}) + "<br>" + esc(t("cannotUndo"));
+      if(used) html += `<div class="ask-warn">${esc(t("libUsedWarn", {n: used}))}</div>`;
+      const ok = await askBox({title: t("delSoundTitle"), html, okLabel: t("delBtn"), danger: true});
+      if(!ok) return;
+      if(playingId === row.id) stopLibAudio();
+      const rm = await sb.storage.from("sounds").remove([row.storage_path]);
+      if(rm.error){ notify("errMsg", {msg: esc(rm.error.message)}, true); return; }
+      const { error } = await sb.from("sounds").delete().eq("id", row.id);
+      if(error){ notify("errMsg", {msg: esc(error.message)}, true); return; }
+      notify("okSoundDeleted", null, false);
+      await loadSounds();
+      syncLocalLibrary();
+    }
+  });
+
+  document.getElementById("goLibraryBtn").addEventListener("click", ()=>{
+    closeBellDialog();
+    activateTab("settings");
   });
 
   // ---------- polling ----------
+  let lastConfigJson = "";
   async function pollSchedule(){
     try{
-      await fetchSchedule(); connected = true;
-      if(!busy){ renderDtList(); renderWeekGrid(); renderStats(); renderMain(); }
-      if(!sigBusy) renderSigPanel();
+      await fetchSchedule(); connected = true; connTried = true;
+      if(!busy){
+        renderMain(); renderBellList();
+        // Kalendar faqat jadval o'zgarganda qayta chiziladi (boshqa qurilmada qilingan o'zgarishlar ham ko'rinadi)
+        const j = JSON.stringify(config);
+        if(j !== lastConfigJson){ lastConfigJson = j; renderCalendar(); }
+      }
     }
-    catch(e){ connected = false; }
+    catch(e){ connected = false; connTried = true; }
     renderClock();
   }
   async function pollLog(){
@@ -790,16 +2853,340 @@
     catch(e){ /* jim */ }
   }
 
-  setInterval(()=>{ if(mode === "live") renderMain(); renderClock(); }, 1000);
-  setInterval(pollSchedule, 4000);
-  setInterval(pollLog, 3000);
+  // ---------- AI e'lon: Azure (o'zbekcha ovoz) + Gemini (matnni yaxshilash) ----------
+  // Ovoz serverda (kalitlar faqat serverda) yasaladi, signal bilan birlashtirish shu yerda - brauzerda,
+  // natija bitta WAV fayl: eshitib ko'rish, kutubxonaga saqlash yoki darhol dinamikdan chalish mumkin.
+  const AI_SR = 24000;          // Azure WAV ham 24 kHz
+  const AI_INTRO_MAX_SEC = 12;  // kutubxonadagi faylning faqat boshi signal sifatida olinadi
+  const aiText = document.getElementById("aiText");
+  const aiCount = document.getElementById("aiCount");
+  const aiEnhanceBtn = document.getElementById("aiEnhanceBtn");
+  const aiSuggest = document.getElementById("aiSuggest");
+  const aiOpSel = document.getElementById("aiOpSel");
+  const aiOpPlay = document.getElementById("aiOpPlay");
+  const aiToneSel = document.getElementById("aiToneSel");
+  const aiIntroSel = document.getElementById("aiIntroSel");
+  const aiRate = document.getElementById("aiRate");
+  const aiRateVal = document.getElementById("aiRateVal");
+  const aiGenBtn = document.getElementById("aiGenBtn");
+  const aiResult = document.getElementById("aiResult");
+  const aiAudio = document.getElementById("aiAudio");
+  const aiName = document.getElementById("aiName");
+  const aiSaveBtn = document.getElementById("aiSaveBtn");
+  const aiVol = document.getElementById("aiVol");
+  const aiVolVal = document.getElementById("aiVolVal");
+  const aiPlayNowBtn = document.getElementById("aiPlayNowBtn");
+  const aiStopBtn = document.getElementById("aiStopBtn");
+  const aiConfNote = document.getElementById("aiConfNote");
+  let aiVoice = "madina";
+  let aiConf = null;           // serverdan: {tts, enhance, playing, error}
+  let aiGenBusy = false, aiEnhBusy = false;
+  let aiBlob = null, aiBlobUrl = null;
+  let aiPollTimer = null;
+  let aiSuggestions = null;    // Gemini variantlari (til almashganda qayta chiziladi)
+
+  wireCustomSelect(aiIntroSel);
+  wireCustomSelect(aiToneSel);
+  wireCustomSelect(aiOpSel);
+  const AI_TONES = ["polite", "official", "festive", "important", "soft"];
+  const aiSampleAudio = new Audio();
+  const aiSampleUrls = new Map(); // "diktor|ohang" -> blob URL (bir marta yuklanadi)
+  let aiSamplePlaying = null;
+
+  // Istalgan audio (wav/mp3) -> 24 kHz mono namunalar
+  async function decodeMono(arrayBuffer){
+    const ctx = new OfflineAudioContext(1, 1, AI_SR);
+    const ab = await ctx.decodeAudioData(arrayBuffer);
+    const out = new Float32Array(ab.length);
+    for(let c = 0; c < ab.numberOfChannels; c++){
+      const d = ab.getChannelData(c);
+      for(let i = 0; i < d.length; i++) out[i] += d[i] / ab.numberOfChannels;
+    }
+    return out;
+  }
+
+  async function loadIntro(value){
+    if(!value || !value.startsWith("file:")) return null;
+    const file = value.slice(5);
+    const r = await api("/audios/" + file.split("/").map(encodeURIComponent).join("/"));
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    let pcm = await decodeMono(await r.arrayBuffer());
+    const max = AI_INTRO_MAX_SEC * AI_SR;
+    if(pcm.length > max){
+      pcm = pcm.slice(0, max);
+      for(let i = 0; i < AI_SR; i++) pcm[max - AI_SR + i] *= 1 - i / AI_SR; // oxirgi 1 soniyada asta pasayadi
+    }
+    return pcm;
+  }
+
+  function encodeWav(samples){
+    const buf = new ArrayBuffer(44 + samples.length * 2);
+    const v = new DataView(buf);
+    const str = (o, s)=>{ for(let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    str(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+    str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, AI_SR, true); v.setUint32(28, AI_SR * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, "data"); v.setUint32(40, samples.length * 2, true);
+    for(let i = 0; i < samples.length; i++){
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    return new Blob([buf], {type: "audio/wav"});
+  }
+
+  // Signal + 0.35 s jimlik + ovoz + 0.3 s jimlik -> bitta WAV (chegaradan oshsa, umumiy pasaytiriladi)
+  function joinParts(intro, speech){
+    const introLen = intro ? intro.length : 0;
+    const gap = intro ? Math.round(0.35 * AI_SR) : 0;
+    const out = new Float32Array(introLen + gap + speech.length + Math.round(0.3 * AI_SR));
+    if(intro) out.set(intro, 0);
+    out.set(speech, introLen + gap);
+    let peak = 0;
+    for(let i = 0; i < out.length; i++) peak = Math.max(peak, Math.abs(out[i]));
+    if(peak > 0.98){ const k = 0.98 / peak; for(let i = 0; i < out.length; i++) out[i] *= k; }
+    return encodeWav(out);
+  }
+
+  // Diktorlar ro'yxati serverdan keladi (ismi, jinsi, qisqa tavsifi) - "Ayol / Erkak ovozlari" guruhlari bilan
+  function renderAiOps(){
+    const ops = (aiConf && aiConf.operators) || [];
+    if(ops.length && !ops.some(o=>o.id === aiVoice)) aiVoice = ops[0].id;
+    const group = (gender, label)=>{
+      const list = ops.filter(o=>o.gender === gender);
+      if(!list.length) return "";
+      return `<optgroup label="${esc(t(label))}">` + list.map(o=>{
+        const desc = (o.desc && (o.desc[lang] || o.desc.uz)) || "";
+        return `<option value="${esc(o.id)}">${esc(o.name)} — ${esc(desc)}</option>`;
+      }).join("") + `</optgroup>`;
+    };
+    aiOpSel.innerHTML = group("female", "aiOpsFemale") + group("male", "aiOpsMale");
+    if(ops.length) aiOpSel.value = aiVoice;
+    refreshCsel(aiOpSel);
+    aiOpPlay.innerHTML = aiSamplePlaying ? ICON_STOP : ICON_PLAY;
+    aiOpPlay.disabled = !ops.length;
+  }
+
+  function renderAiTones(){
+    const prev = aiToneSel.value || "polite";
+    const ids = (aiConf && aiConf.tones) || AI_TONES;
+    aiToneSel.innerHTML = ids.map(id=>`<option value="${esc(id)}">${esc(t("aiTone_" + id))}</option>`).join("");
+    aiToneSel.value = ids.includes(prev) ? prev : ids[0];
+    refreshCsel(aiToneSel);
+  }
+
+  function stopAiSample(){
+    if(!aiSamplePlaying) return;
+    aiSampleAudio.pause();
+    aiSamplePlaying = null;
+    aiOpPlay.innerHTML = ICON_PLAY;
+  }
+
+  async function playAiSample(opId, btn){
+    if(aiSamplePlaying === opId){ stopAiSample(); return; }
+    const key = opId + "|" + aiToneSel.value;
+    btn.classList.add("loading");
+    try{
+      if(!aiSampleUrls.has(key)){
+        const r = await api("/api/ai/sample?voice=" + encodeURIComponent(opId) + "&tone=" + encodeURIComponent(aiToneSel.value));
+        if(!r.ok) throw await apiError(r);
+        aiSampleUrls.set(key, URL.createObjectURL(await r.blob()));
+      }
+      aiSampleAudio.src = aiSampleUrls.get(key);
+      await aiSampleAudio.play();
+      aiSamplePlaying = opId;
+    }catch(e){ notifyError(e); }
+    btn.classList.remove("loading");
+    aiOpPlay.innerHTML = aiSamplePlaying ? ICON_STOP : ICON_PLAY;
+  }
+  aiSampleAudio.addEventListener("ended", ()=>{ aiSamplePlaying = null; aiOpPlay.innerHTML = ICON_PLAY; });
+
+  // Boshqa diktor yoki ohang tanlansa - chalinayotgan namuna to'xtaydi
+  aiOpSel.addEventListener("change", ()=>{ aiVoice = aiOpSel.value; stopAiSample(); });
+  aiToneSel.addEventListener("change", stopAiSample);
+  aiOpPlay.addEventListener("click", ()=>{ if(aiVoice) playAiSample(aiVoice, aiOpPlay); });
+
+  // Boshida signal: faqat "Signalsiz" yoki foydalanuvchi kutubxonaga (Sozlamalar -> Musiqalar) yuklagan fayllar
+  function renderAiIntroOptions(){
+    const prev = aiIntroSel.value || "none";
+    const lib = libraryLocal.map(e=>`<option value="file:${esc(e.file)}">${esc(e.name)}</option>`).join("");
+    aiIntroSel.innerHTML = `<option value="none">${esc(t("aiIntroNone"))}</option>`
+      + (lib ? `<optgroup label="${esc(t("aiIntroGroupLib"))}">${lib}</optgroup>` : "");
+    aiIntroSel.value = [...aiIntroSel.options].some(o=>o.value === prev) ? prev : "none";
+    refreshCsel(aiIntroSel);
+  }
+
+  function renderAiCount(){ aiCount.textContent = aiText.value.length + " / 1500"; }
+  aiText.addEventListener("input", renderAiCount);
+  aiRate.addEventListener("input", ()=>{
+    const v = Number(aiRate.value);
+    aiRateVal.textContent = (v > 0 ? "+" : "") + v + "%";
+  });
+  aiVol.addEventListener("input", ()=>{ aiVolVal.textContent = aiVol.value + "%"; });
+
+  async function refreshAiStatus(){
+    try{
+      const r = await api("/api/ai/status");
+      if(!r.ok) return;
+      aiConf = await r.json();
+    }catch(e){ return; }
+    renderAiConf();
+    if(!aiOpSel.options.length) { renderAiOps(); renderAiTones(); }
+  }
+
+  function renderAiConf(){
+    const notes = [];
+    if(aiConf && !aiConf.tts) notes.push(t("aiConfTts"));
+    if(aiConf && !aiConf.enhance) notes.push(t("aiConfEnh"));
+    aiConfNote.hidden = !notes.length;
+    aiConfNote.innerHTML = notes.length
+      ? notes.join("<br>") + `<br><button type="button" class="link-btn" id="aiGoKeys">${esc(t("aiGoKeys"))}</button>` : "";
+    const goKeys = document.getElementById("aiGoKeys");
+    if(goKeys) goKeys.addEventListener("click", ()=>{
+      activateTab("settings");
+      document.getElementById("aiKeysPanel").scrollIntoView({behavior: "smooth", block: "start"});
+    });
+    for(const [id, on] of [["aiKeyStateGemini", aiConf && aiConf.gemini], ["aiKeyStateAzure", aiConf && aiConf.azure]]){
+      const el = document.getElementById(id);
+      el.className = "key-state " + (on ? "ok" : "no");
+      el.textContent = aiConf ? t(on ? "aiKeySet" : "aiKeyMissing") : "";
+    }
+    aiGenBtn.disabled = aiGenBusy || !(aiConf && aiConf.tts);
+    aiEnhanceBtn.disabled = aiEnhBusy || !(aiConf && aiConf.enhance);
+    aiStopBtn.hidden = !(aiConf && aiConf.playing);
+  }
+
+  function renderAiSuggest(){
+    if(!aiSuggestions || !aiSuggestions.length){ aiSuggest.hidden = true; aiSuggest.innerHTML = ""; return; }
+    aiSuggest.hidden = false;
+    aiSuggest.innerHTML = `<div class="ai-sug-head">${esc(t("aiSugHead"))}</div>` +
+      aiSuggestions.map((s, i)=>`<button type="button" class="ai-sug${i === 0 ? " main" : ""}" data-i="${i}">${esc(s)}</button>`).join("");
+  }
+  aiSuggest.addEventListener("click", (e)=>{
+    const b = e.target.closest(".ai-sug");
+    if(!b) return;
+    aiText.value = aiSuggestions[Number(b.dataset.i)];
+    renderAiCount();
+    aiSuggestions = null;
+    renderAiSuggest();
+  });
+
+  aiEnhanceBtn.addEventListener("click", async ()=>{
+    const text = aiText.value.trim();
+    if(!text){ notify("aiNeedText", null, true); return; }
+    const label = aiEnhanceBtn.querySelector("span");
+    aiEnhBusy = true; renderAiConf(); label.textContent = t("aiEnhancing");
+    try{
+      const r = await api("/api/ai/enhance", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
+      if(!r.ok) throw await apiError(r);
+      const j = await r.json();
+      aiSuggestions = [j.enhancedText, ...(j.suggestions || [])];
+      renderAiSuggest();
+    }catch(e){ notifyError(e); }
+    aiEnhBusy = false; label.textContent = t("aiEnhanceBtn"); renderAiConf();
+  });
+
+  function setAiResult(blob, text){
+    aiBlob = blob;
+    if(aiBlobUrl) URL.revokeObjectURL(aiBlobUrl);
+    aiBlobUrl = URL.createObjectURL(blob);
+    aiAudio.src = aiBlobUrl;
+    const short = text.length > 50 ? text.slice(0, 50).replace(/\s+\S*$/, "") + "..." : text;
+    aiName.value = t("aiDefaultName") + ": " + short;
+    aiResult.hidden = false;
+    aiResult.scrollIntoView({behavior: "smooth", block: "nearest"});
+  }
+
+  aiGenBtn.addEventListener("click", async ()=>{
+    const text = aiText.value.trim();
+    if(!text){ notify("aiNeedText", null, true); return; }
+    aiGenBusy = true; renderAiConf(); aiGenBtn.textContent = t("aiGenerating");
+    try{
+      const r = await api("/api/ai/tts", {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text, voice: aiVoice, tone: aiToneSel.value, rate: Number(aiRate.value)})});
+      if(!r.ok) throw await apiError(r);
+      const speech = await decodeMono(await r.arrayBuffer());
+      let intro = null;
+      try{ intro = await loadIntro(aiIntroSel.value); }catch(e){ notify("aiIntroFail", null, true); }
+      setAiResult(joinParts(intro, speech), text);
+      notify("okAiGenerated", null, false);
+    }catch(e){ notifyError(e); }
+    aiGenBusy = false; aiGenBtn.textContent = t("aiGenBtn"); renderAiConf();
+  });
+
+  aiSaveBtn.addEventListener("click", async ()=>{
+    if(!aiBlob) return;
+    const name = (aiName.value.trim() || t("aiDefaultName")).slice(0, 200);
+    aiSaveBtn.disabled = true; aiSaveBtn.textContent = t("aiSaving");
+    try{
+      await uploadSounds([new File([aiBlob], name + ".wav", {type: "audio/wav"})], {kind: "announcement"});
+    }finally{
+      aiSaveBtn.disabled = false; aiSaveBtn.textContent = t("aiSaveBtn");
+    }
+  });
+
+  function pollAiPlaying(){
+    clearInterval(aiPollTimer);
+    aiPollTimer = setInterval(async ()=>{
+      await refreshAiStatus();
+      if(!aiConf || !aiConf.playing){
+        clearInterval(aiPollTimer); aiPollTimer = null;
+        if(aiConf && aiConf.error) notify("errMsg", {msg: esc(aiConf.error)}, true);
+      }
+    }, 1500);
+  }
+
+  aiPlayNowBtn.addEventListener("click", async ()=>{
+    if(!aiBlob) return;
+    aiPlayNowBtn.disabled = true;
+    try{
+      const r = await api("/api/ai/play?volume=" + Number(aiVol.value), {method: "POST", headers: {"Content-Type": "audio/wav"}, body: aiBlob});
+      if(!r.ok) throw await apiError(r);
+      aiConf = Object.assign(aiConf || {}, await r.json());
+      notify("okAiPlaying", null, false);
+      pollAiPlaying();
+    }catch(e){ notifyError(e); }
+    aiPlayNowBtn.disabled = false;
+    renderAiConf();
+  });
+
+  // Kalitlarni saqlash: server ularni .env ga yozadi va darhol qo'llaydi. Maydonlar keyin tozalanadi.
+  const aiKeysSave = document.getElementById("aiKeysSave");
+  aiKeysSave.addEventListener("click", async ()=>{
+    const keyInputs = {geminiKey: "aiKeyGemini", azureKey: "aiKeyAzure", azureRegion: "aiKeyRegion"};
+    const body = {};
+    for(const [field, id] of Object.entries(keyInputs)){
+      const v = document.getElementById(id).value.trim();
+      if(v) body[field] = v;
+    }
+    if(!Object.keys(body).length){ notify("errAiKeysEmpty", null, true); return; }
+    aiKeysSave.disabled = true;
+    try{
+      const r = await api("/api/ai/keys", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+      if(!r.ok) throw await apiError(r);
+      aiConf = await r.json();
+      Object.values(keyInputs).forEach(id=>{ document.getElementById(id).value = ""; });
+      notify("okAiKeys", null, false);
+    }catch(e){ notifyError(e); }
+    aiKeysSave.disabled = false;
+    renderAiConf();
+  });
+
+  aiStopBtn.addEventListener("click", async ()=>{
+    try{
+      const r = await api("/api/ai/stop", {method: "POST"});
+      if(r.ok) aiConf = Object.assign(aiConf || {}, await r.json());
+    }catch(e){ notifyError(e); }
+    renderAiConf();
+  });
+
+  // Kirilmaguncha hech qanday so'rov yuborilmaydi
+  setInterval(()=>{ if(authed){ renderMain(); renderClock(); } }, 1000);
+  setInterval(()=>{ if(authed) pollSchedule(); }, 4000);
+  setInterval(()=>{ if(authed) pollLog(); }, 3000);
 
   (async function init(){
-    await pollSchedule();
-    await pollLog();
-    await pollAnnounceStatus();
-    await fetchAudioFiles();
-    renderAll();
+    applyLang();
+    await initSupabase();   // admin bo'lsa panelni ochadi (startApp), bo'lmasa kirish ekranini ko'rsatadi
   })();
 })();
 </script>

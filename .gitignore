@@ -1,4 +1,19 @@
 bell_system/logs/*.csv
+# Supabase'dan avtomatik tushiriladigan kesh va "darhol chalish" uchun vaqtinchalik fayllar
+bell_system/audios/library/
+bell_system/audios/_live/
+bell_web/.cache/
+# o'rnatish.bat / install.ps1 har kompyuterda o'zi yasaydi (ichida shu kompyuterdagi Python yo'li)
+bell_system/start_bell_scheduler.vbs
 bell_system.zip
 node_modules/
 __pycache__/
+
+# O'rnatuvchi: yig'ilgan ichki muhit (Python/Node, ~150 MB) va tayyor setup.exe
+installer/build/
+installer/Output/
+
+# Maxfiy kalitlar - hech qachon git ga tushmasin
+.env
+.env.*
+!.env.example

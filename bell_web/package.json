@@ -1,7 +1,7 @@
 {
-  "name": "bell-web",
+  "name": "ois-school-bell-web",
   "version": "1.0.0",
-  "description": "Oxford International School qo'ng'iroq tizimi uchun local web boshqaruv paneli",
+  "description": "OIS School Bell (Oxford International School) - local web boshqaruv paneli",
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",

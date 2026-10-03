@@ -1,0 +1,27 @@
+﻿OIS School Bell - foydalanish shartlari
+(Oxford International School uchun ichki dastur)
+
+1. Ushbu dastur Oxford International School ichki ehtiyojlari uchun - maktab qo'ng'iroqlarini jadval asosida avtomatik chalish, musiqa va e'lonlarni boshqarish uchun mo'ljallangan.
+
+2. Dasturni faqat maktab ma'muriyati ruxsat bergan kompyuterlarga o'rnatish mumkin. O'rnatuvchi faylni (setup.exe) va dastur bilan birga keladigan sozlama fayllarini (.env) maktabdan tashqariga, uchinchi shaxslarga yoki ijtimoiy tarmoqlarga tarqatish taqiqlanadi.
+
+3. Panelga kirish login va paroli maxfiy saqlanadi va faqat vakolatli xodimlarga beriladi.
+
+4. Dastur "boricha" taqdim etiladi. Qo'ng'iroqlarning to'g'ri chalinishi uchun kompyuter yoqilgan, Windows'ga kirilgan va audio chiqishi (karnay/dinamik) ulangan bo'lishi kerak.
+
+5. "Men shartlarni qabul qilaman" ni tanlab, siz ushbu shartlarga roziligingizni bildirasiz.
+
+---------------------------------------------------------------
+
+OIS School Bell - условия использования
+(внутренняя программа Oxford International School)
+
+1. Программа предназначена для внутренних нужд Oxford International School: автоматическая подача школьных звонков по расписанию, управление музыкой и объявлениями.
+
+2. Устанавливать программу можно только на компьютеры, разрешённые администрацией школы. Запрещается передавать установщик (setup.exe) и файлы настроек (.env) за пределы школы, третьим лицам или в социальные сети.
+
+3. Логин и пароль от панели хранятся в тайне и выдаются только уполномоченным сотрудникам.
+
+4. Программа предоставляется "как есть". Для правильной работы звонков компьютер должен быть включён, вход в Windows выполнен, а аудиовыход (колонки/динамики) подключён.
+
+5. Выбирая "Я принимаю условия соглашения", вы соглашаетесь с этими условиями.
