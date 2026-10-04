@@ -7,7 +7,7 @@
 ; Yasash: installer\README.md ga qarang (qisqasi: stage_runtime.py, keyin ISCC OIS-School-Bell.iss).
 
 #define AppName "OIS School Bell"
-#define AppVersion "1.0.4"
+#define AppVersion "1.0.5"
 #define AppPublisher "Oxford International School"
 
 ; ---- Maxfiy kalitlar (bell_web\.env) ----
@@ -72,6 +72,7 @@ Source: "build\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recurs
 Source: "..\bell_system\bell_scheduler.py"; DestDir: "{app}\bell_system"; Flags: ignoreversion
 Source: "..\bell_system\audio_engine.py"; DestDir: "{app}\bell_system"; Flags: ignoreversion
 Source: "..\bell_system\live_announce.py"; DestDir: "{app}\bell_system"; Flags: ignoreversion
+Source: "..\bell_system\live_stream.py"; DestDir: "{app}\bell_system"; Flags: ignoreversion
 Source: "..\bell_system\bell_admin.py"; DestDir: "{app}\bell_system"; Flags: ignoreversion
 Source: "..\bell_system\README.md"; DestDir: "{app}\bell_system"; Flags: ignoreversion
 Source: "..\bell_system\audios\*"; Excludes: "library,_live"; DestDir: "{app}\bell_system\audios"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -83,6 +84,7 @@ Source: "..\bell_system\config\uz_holidays.json"; DestDir: "{app}\bell_system\co
 Source: "..\bell_web\server.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\ai.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\cloud_sync.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
+Source: "..\bell_web\live_relay.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\add_user.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\package.json"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\.env.example"; DestDir: "{app}\bell_web"; Flags: ignoreversion

@@ -77,6 +77,7 @@ const SCHEDULE_PATH = path.join(BELL_SYSTEM_DIR, "config", "schedule.json");
 const PUBLIC_HOLIDAYS_PATH = path.join(BELL_SYSTEM_DIR, "config", "uz_holidays.json"); // O'zbekiston davlat bayramlari
 const LOG_PATH = path.join(BELL_SYSTEM_DIR, "logs", "bell_log.csv");
 const LIVE_ANNOUNCE_SCRIPT = path.join(BELL_SYSTEM_DIR, "live_announce.py");
+const LIVE_STREAM_SCRIPT = path.join(BELL_SYSTEM_DIR, "live_stream.py"); // onlayn jonli efir
 const AUDIO_DIR = path.join(BELL_SYSTEM_DIR, "audios");
 // O'rnatuvchi (setup.exe) bilan o'rnatilganda Python dastur ichida keladi (runtime/python) -
 // kompyuterda alohida Python o'rnatilmagan bo'lsa ham jonli e'lon ishlashi uchun. Bo'lmasa - tizimdagi "python".
@@ -87,6 +88,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 // Jadval qoidalari (tekshiruv, qo'shish/o'chirish) - lokal va onlayn panel uchun umumiy fayl
 const ScheduleCore = require("./public/schedule_core.js");
 const { createCloudSync } = require("./cloud_sync");
+const { createLiveRelay } = require("./live_relay");
 const todayLocal = () => ScheduleCore.todayIn();
 
 function listAudioFiles() {
@@ -704,8 +706,18 @@ server.listen(PORT, () => {
 
 // Onlayn panel: jadval, holat va buyruqlar Supabase orqali (maktab kompyuteri faqat o'zi murojaat qiladi).
 // CLOUD_SYNC=off - shu kompyuter onlayn panelga ulanmaydi (masalan, sinov kompyuteri).
+// Onlayn jonli efir: ovoz Supabase Realtime orqali keladi va live_stream.py orqali speakerlarga chiqadi
+const liveRelay = createLiveRelay({
+  env: () => ({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY }),
+  spawnPlayer: (volume) => spawn(PYTHON_EXE, [LIVE_STREAM_SCRIPT, String(volume)],
+    { cwd: BELL_SYSTEM_DIR, windowsHide: true, stdio: ["pipe", "ignore", "pipe"] }),
+  setMic: (on) => engineCall("POST", "/mic", { on }),
+  log: (msg) => console.log(msg),
+});
+
 if (String(process.env.CLOUD_SYNC || "").toLowerCase() !== "off") {
   cloud = createCloudSync({
+    live: liveRelay,
     env: () => ({ url: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }),
     schedulePath: SCHEDULE_PATH,
     stateDir: path.join(__dirname, ".cache"),
@@ -718,5 +730,5 @@ if (String(process.env.CLOUD_SYNC || "").toLowerCase() !== "off") {
 }
 applySupabaseEnv();
 
-process.on("SIGINT", () => { stopAnnounce(); if (liveProc) liveProc.kill(); process.exit(0); });
-process.on("SIGTERM", () => { stopAnnounce(); if (liveProc) liveProc.kill(); process.exit(0); });
+process.on("SIGINT", () => { stopAnnounce(); liveRelay.stop("server to'xtadi"); if (liveProc) liveProc.kill(); process.exit(0); });
+process.on("SIGTERM", () => { stopAnnounce(); liveRelay.stop("server to'xtadi"); if (liveProc) liveProc.kill(); process.exit(0); });

@@ -15,7 +15,8 @@ const SCHEDULE_EVERY_MS = 5 * 1000;
 const STATUS_EVERY_MS = 15 * 1000;
 const COMMANDS_EVERY_MS = 2 * 1000;
 const CLEANUP_EVERY_MS = 60 * 60 * 1000;
-const COMMAND_MAX_AGE_MS = { ai_play: 60 * 1000, ai_stop: 60 * 1000 }; // eskirgan "chal" buyrug'i chalinmaydi
+// eskirgan "chal" / "efir" buyrug'i bajarilmaydi
+const COMMAND_MAX_AGE_MS = { ai_play: 60 * 1000, ai_stop: 60 * 1000, live_start: 30 * 1000, live_stop: 60 * 1000 };
 const COMMAND_DEFAULT_MAX_AGE_MS = 3 * 60 * 1000;
 const TRANSFER_BUCKET = "transfer";
 const MAX_PLAY_BYTES = 25 * 1024 * 1024;
@@ -154,6 +155,7 @@ function createCloudSync(ctx) {
         library: ctx.readLibraryIndex(),
         lib_sync: ctx.libSync,
         ai: { ...ctx.ai.aiStatus(), ...(await ctx.liveStatus()), maxText: ctx.ai.MAX_TEXT },
+        live: ctx.live.status(),
         log: ctx.readLog(60),
       };
       const rows = [{ key: "status", value, updated_at: value.seen_at, updated_by: "school-pc" }];
@@ -215,6 +217,13 @@ function createCloudSync(ctx) {
     async ai_stop() {
       return await ctx.stopLive();
     },
+    // Onlayn jonli efir: kanal nomi va kalit qaytariladi, ovoz Realtime orqali keladi (live_relay.js)
+    async live_start(p) {
+      return ctx.live.start(Number(p.volume));
+    },
+    async live_stop() {
+      return ctx.live.stop("paneldan to'xtatildi");
+    },
   };
 
   async function finishCommand(id, status, result) {
@@ -244,7 +253,7 @@ function createCloudSync(ctx) {
         } catch (e) {
           await finishCommand(cmd.id, "error", { error: String(e.message || e) }).catch(() => {});
         }
-        if (cmd.op === "ai_play" || cmd.op === "ai_stop" || cmd.op === "library_sync") publishStatus();
+        if (["ai_play", "ai_stop", "library_sync", "live_start", "live_stop"].includes(cmd.op)) publishStatus();
       }
     } catch (e) {
       st.lastError = String(e.message || e);
