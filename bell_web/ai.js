@@ -123,6 +123,47 @@ function stripC2pa(pcm) {
   return pcm;
 }
 
+// Gemini ovozi ikki ko'rinishda keladi: xom PCM ("audio/L16;rate=24000") yoki tayyor WAV fayl ("audio/wav").
+// WAV bo'lsa - faqat "data" bo'lagini olamiz: aks holda fayl sarlavhasi (44 bayt) ovoz deb chalinib, boshida
+// keskin "chirt" eshitiladi; C2PA imzosi esa alohida bo'lak bo'lgani uchun o'zi tashlab ketiladi.
+// Natija: { pcm, rate } (16-bit mono)
+function geminiAudioToPcm(buf, mimeType) {
+  const rateFromMime = /rate=(\d+)/.exec(mimeType || "");
+  if (buf.length >= 12 && buf.toString("latin1", 0, 4) === "RIFF" && buf.toString("latin1", 8, 12) === "WAVE") {
+    let rate = 24000, channels = 1, bits = 16, data = null;
+    for (let p = 12; p + 8 <= buf.length;) {
+      const id = buf.toString("latin1", p, p + 4);
+      const size = buf.readUInt32LE(p + 4);
+      const body = buf.subarray(p + 8, Math.min(buf.length, p + 8 + size));
+      if (id === "fmt " && body.length >= 16) {
+        channels = body.readUInt16LE(2); rate = body.readUInt32LE(4); bits = body.readUInt16LE(14);
+      } else if (id === "data") {
+        data = body;
+      }
+      p += 8 + size + (size % 2);
+    }
+    if (!data) throw httpError(502, "Gemini ovozi buzilgan keldi - qayta urinib ko'ring");
+    if (bits !== 16 || channels !== 1) throw httpError(502, `Gemini kutilmagan ovoz formatini qaytardi (${bits}-bit, ${channels} kanal)`);
+    return { pcm: data.subarray(0, data.length - (data.length % 2)), rate };
+  }
+  return { pcm: stripC2pa(buf), rate: rateFromMime ? Number(rateFromMime[1]) : 24000 };
+}
+
+// Boshi va oxirini silliqlaydi (keskin boshlanish/tugash ham "chirt" bo'lib eshitiladi) va oxiriga
+// qisqa jimlik qo'shadi - har qanday pleyerda ovoz toza tugaydi.
+function smoothEdges(pcm, rate) {
+  const out = Buffer.from(pcm);
+  const n = out.length / 2;
+  const fadeIn = Math.min(n, Math.round(rate * 0.015));
+  const fadeOut = Math.min(n, Math.round(rate * 0.04));
+  for (let i = 0; i < fadeIn; i++) out.writeInt16LE(Math.round(out.readInt16LE(i * 2) * (i / fadeIn)), i * 2);
+  for (let i = 0; i < fadeOut; i++) {
+    const k = n - 1 - i;
+    out.writeInt16LE(Math.round(out.readInt16LE(k * 2) * (i / fadeOut)), k * 2);
+  }
+  return Buffer.concat([out, Buffer.alloc(Math.round(rate * 0.25) * 2)]);
+}
+
 // 16-bit mono PCM ga WAV sarlavhasini qo'shadi
 function pcmToWav(pcm, sampleRate) {
   const h = Buffer.alloc(44);
@@ -150,7 +191,8 @@ function sampleKey(voice, tone) {
   findOperator(voice);
   const t = TONES[tone] ? tone : "polite";
   const provider = azureConfig() ? "azure" : "gemini";
-  return { key: `${provider}_${voice}_${t}`, tone: t };
+  // "v2": eski keshdagi namunalarda boshida "chirt" bor edi (WAV sarlavhasi) - ular endi ishlatilmaydi
+  return { key: `${provider}_v2_${voice}_${t}`, tone: t };
 }
 
 async function synthesizeSample(voice, tone) {
@@ -195,8 +237,8 @@ async function synthesizeGemini(prompt, voiceName) {
     const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
     const audio = parts.find((p) => p.inlineData && p.inlineData.data);
     if (!audio) throw httpError(502, "Gemini ovoz qaytarmadi - qayta urinib ko'ring");
-    const m = /rate=(\d+)/.exec(audio.inlineData.mimeType || "");
-    return pcmToWav(stripC2pa(Buffer.from(audio.inlineData.data, "base64")), m ? Number(m[1]) : 24000);
+    const { pcm, rate } = geminiAudioToPcm(Buffer.from(audio.inlineData.data, "base64"), audio.inlineData.mimeType);
+    return pcmToWav(smoothEdges(pcm, rate), rate);
   }
   if (lastStatus === 429) throw httpError(502, "Gemini'ning bugungi bepul limiti tugadi - ertaga yoki birozdan keyin urinib ko'ring");
   if (lastStatus === 500 || lastStatus === 503) throw httpError(502, "Gemini hozir band - bir necha soniyadan keyin qayta urinib ko'ring");
