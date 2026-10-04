@@ -6,7 +6,16 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
       "cwd": "bell_web",
+      "env": {"CLOUD_SYNC": "off"},
       "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "cloud-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["cloud/preview.js"],
+      "cwd": "bell_web",
+      "port": 3070,
       "autoPort": true
     }
   ]

@@ -50,6 +50,8 @@
   *{box-sizing:border-box}
   /* "hidden" atributi har doim ishlasin (aks holda .panel{display:flex} kabi qoidalar uni bekor qiladi) */
   [hidden]{display:none !important}
+  /* Onlayn panel: mikrofon va AI kalitlari faqat maktab kompyuterining o'zida */
+  .cloud #announceBtn, .cloud #aiKeysPanel, .cloud body > footer{display:none !important}
   html,body{margin:0;padding:0}
   /* ---------- Scrollbar: brauzerning standart (katta, oq) o'rniga ingichka, mavzuga mos ---------- */
   *{scrollbar-width:thin; scrollbar-color:var(--line) transparent}
@@ -852,9 +854,13 @@
 <footer data-i18n-html="footer"></footer>
 
 <script src="/vendor/supabase.js"></script>
+<script src="/schedule_core.js"></script>
 <script>
 (function(){
   "use strict";
+  // Internetdagi (onlayn) panel: deploy paytida window.OIS_CLOUD = {url, anonKey} qo'shiladi
+  const CLOUD = window.OIS_CLOUD || null;
+  if(CLOUD) document.documentElement.classList.add("cloud");
 
   // ---------- tarjimalar (uz / ru / en) ----------
   const I18N = {
@@ -877,6 +883,17 @@
       soundGroupLib: "Kutubxona", soundGroupLocal: "Kompyuterdagi fayllar",
       tabSettings: "Sozlamalar", accTitle: "Akkaunt",
       accNotConfigured: "Supabase sozlanmagan. <span class=\"mono\">bell_web/.env</span> faylini tekshiring.",
+      setupTitle: "Birinchi sozlash",
+      setupText: "Dastur ishlashi uchun <b>kalitlar fayli</b> kerak (<span class=\"mono\">.env</span> yoki <span class=\"mono\">OIS-School-Bell-kalitlar.env</span>). Uni fleshkadan tanlang - bir marta qilinadi.",
+      setupPick: "Kalitlar faylini tanlash",
+      setupBadFile: "Bu kalitlar fayli emas",
+      setupOk: "Kalitlar saqlandi - kirish oynasi ochilmoqda",
+      cloudPcOn: "maktab kompyuteri onlayn", cloudPcOff: "maktab kompyuteri oflayn",
+      cloudPcOffline: "Maktab kompyuteri hozir oflayn (o'chiq yoki internet yo'q). Jadval o'zgarishlari saqlanadi va u yoqilganda o'zi oladi, lekin ovozni hozir chalib bo'lmaydi.",
+      cloudCmdTimeout: "Maktab kompyuteri javob bermadi - birozdan keyin qayta urinib ko'ring",
+      cloudNoSchedule: "Maktab kompyuteri hali jadvalni yubormagan - dastur o'sha kompyuterda ishga tushganini tekshiring",
+      cloudConflict: "Jadval shu payt boshqa joyda ham o'zgardi - qayta urinib ko'ring",
+      cloudLocalOnly: "Bu imkoniyat faqat maktab kompyuterining o'zida ishlaydi",
       accNoLib: "Supabase kutubxonasini yuklab bo'lmadi (internet kerak). Qo'ng'iroqlar lokal nusxadan ishlayveradi.",
       accNeedLogin: "Musiqalar kutubxonasini boshqarish uchun tizimga kiring.",
       accEmail: "Email", accPassword: "Parol", accLoginBtn: "Kirish", accLogoutBtn: "Chiqish", accSignedIn: "Kirgan: {email}",
@@ -1012,6 +1029,17 @@
       soundGroupLib: "Библиотека", soundGroupLocal: "Файлы на компьютере",
       tabSettings: "Настройки", accTitle: "Аккаунт",
       accNotConfigured: "Supabase не настроен. Проверьте файл <span class=\"mono\">bell_web/.env</span>.",
+      setupTitle: "Первая настройка",
+      setupText: "Для работы нужен <b>файл ключей</b> (<span class=\"mono\">.env</span> или <span class=\"mono\">OIS-School-Bell-kalitlar.env</span>). Выберите его с флешки - это делается один раз.",
+      setupPick: "Выбрать файл ключей",
+      setupBadFile: "Это не файл ключей",
+      setupOk: "Ключи сохранены - открывается вход",
+      cloudPcOn: "школьный компьютер в сети", cloudPcOff: "школьный компьютер не в сети",
+      cloudPcOffline: "Школьный компьютер сейчас не в сети (выключен или нет интернета). Изменения расписания сохранятся и он получит их при включении, но воспроизвести звук сейчас нельзя.",
+      cloudCmdTimeout: "Школьный компьютер не ответил - попробуйте чуть позже",
+      cloudNoSchedule: "Школьный компьютер ещё не отправил расписание - проверьте, что программа на нём запущена",
+      cloudConflict: "Расписание только что изменили в другом месте - попробуйте ещё раз",
+      cloudLocalOnly: "Эта функция работает только на самом школьном компьютере",
       accNoLib: "Не удалось загрузить библиотеку Supabase (нужен интернет). Звонки продолжат работать с локальных копий.",
       accNeedLogin: "Войдите, чтобы управлять музыкальной библиотекой.",
       accEmail: "Email", accPassword: "Пароль", accLoginBtn: "Войти", accLogoutBtn: "Выйти", accSignedIn: "Вход выполнен: {email}",
@@ -1147,6 +1175,17 @@
       soundGroupLib: "Library", soundGroupLocal: "Files on this computer",
       tabSettings: "Settings", accTitle: "Account",
       accNotConfigured: "Supabase is not configured. Check <span class=\"mono\">bell_web/.env</span>.",
+      setupTitle: "First-time setup",
+      setupText: "The program needs its <b>keys file</b> (<span class=\"mono\">.env</span> or <span class=\"mono\">OIS-School-Bell-kalitlar.env</span>). Pick it from the USB stick - this is done once.",
+      setupPick: "Choose keys file",
+      setupBadFile: "This is not a keys file",
+      setupOk: "Keys saved - opening sign-in",
+      cloudPcOn: "school computer online", cloudPcOff: "school computer offline",
+      cloudPcOffline: "The school computer is offline right now (turned off or no internet). Schedule changes are saved and it will pick them up when it is back, but sound cannot be played now.",
+      cloudCmdTimeout: "The school computer did not respond - try again a bit later",
+      cloudNoSchedule: "The school computer has not sent its schedule yet - check that the program is running there",
+      cloudConflict: "The schedule was just changed somewhere else - please try again",
+      cloudLocalOnly: "This feature works only on the school computer itself",
       accNoLib: "Could not load the Supabase library (internet required). Bells keep working from local copies.",
       accNeedLogin: "Sign in to manage the music library.",
       accEmail: "Email", accPassword: "Password", accLoginBtn: "Sign in", accLogoutBtn: "Sign out", accSignedIn: "Signed in: {email}",
@@ -1475,7 +1514,156 @@
 
   // Serverga so'rov: login tokenini qo'shadi. Server 401 qaytarsa (sessiya bekor qilingan) - qulflaydi.
   let sessionKicked = false;
+  // ---------- Onlayn rejim (internetdagi panel) ----------
+  // Internetdagi panelda maktab kompyuterining serveri yo'q: jadval to'g'ridan-to'g'ri Supabase'da
+  // o'zgartiriladi (qoidalar schedule_core.js da - lokal panel bilan bir xil), maktab kompyuteri esa
+  // har necha soniyada o'zi olib ketadi. Ovoz chalish/AI kabi ishlar "buyruq" sifatida yuboriladi va
+  // maktab kompyuterida bajariladi. Shu sababli panelning qolgan kodi o'zgarmaydi - faqat api() javobi
+  // boshqa joydan keladi.
+  const PC_ONLINE_MS = 60 * 1000;     // shu muddatdan beri xabar bo'lmasa - maktab kompyuteri oflayn
+  const CMD_TIMEOUT_MS = {ai_tts: 150000, ai_sample: 90000, ai_enhance: 90000, library_sync: 120000};
+  let cloudStatusCache = null, cloudStatusAt = 0;
+  let pcOnline = false;
+  const cloudSampleCache = new Map();
+
+  function cloudJson(status, data){
+    return new Response(JSON.stringify(data), {status, headers: {"Content-Type": "application/json"}});
+  }
+  function cloudErr(e){ return cloudJson(503, {error: String((e && e.message) || e)}); }
+
+  async function cloudState(key){
+    const { data, error } = await sb.from("app_state").select("value,version,updated_at").eq("key", key).maybeSingle();
+    if(error) throw new Error(error.message);
+    return data;
+  }
+
+  async function cloudStatus(force){
+    if(!force && cloudStatusCache && Date.now() - cloudStatusAt < 4000) return cloudStatusCache;
+    const row = await cloudState("status");
+    cloudStatusCache = (row && row.value) || {};
+    cloudStatusAt = Date.now();
+    pcOnline = !!cloudStatusCache.seen_at && Date.now() - new Date(cloudStatusCache.seen_at).getTime() < PC_ONLINE_MS;
+    return cloudStatusCache;
+  }
+
+  // Maktab kompyuterida bajariladigan buyruq: yozamiz va natijasini kutamiz
+  async function cloudCommand(op, payload){
+    await cloudStatus();
+    if(!pcOnline) throw new Error(t("cloudPcOffline"));
+    const { data, error } = await sb.from("commands")
+      .insert({op, payload: payload || {}, created_by: sbSession.user.id}).select("id").single();
+    if(error) throw new Error(error.message);
+    const until = Date.now() + (CMD_TIMEOUT_MS[op] || 30000);
+    while(Date.now() < until){
+      await new Promise(r => setTimeout(r, 800));
+      const res = await sb.from("commands").select("status,result").eq("id", data.id).single();
+      if(res.error) continue;
+      const c = res.data;
+      if(c.status === "done") return c.result || {};
+      if(c.status === "error" || c.status === "expired") throw new Error((c.result && c.result.error) || c.status);
+    }
+    throw new Error(t("cloudCmdTimeout"));
+  }
+
+  async function cloudDownload(bucket, path){
+    const { data, error } = await sb.storage.from(bucket).download(path);
+    if(error) throw new Error(error.message);
+    return new Response(data, {status: 200, headers: {"Content-Type": data.type || "audio/wav"}});
+  }
+
+  // Jadvalga o'zgarish: o'qish -> qoidani qo'llash -> faqat shu orada boshqa o'zgarish bo'lmagan bo'lsa yozish
+  async function cloudMutate(op, body){
+    const today = ScheduleCore.todayIn((cloudStatusCache && cloudStatusCache.tz) || "Asia/Tashkent");
+    for(let attempt = 0; attempt < 4; attempt++){
+      const row = await cloudState("schedule");
+      if(!row) return cloudJson(503, {error: t("cloudNoSchedule")});
+      const r = ScheduleCore.applyOp(op, row.value, body, today);
+      if(r.error) return cloudJson(400, {error: r.error});
+      const { data, error } = await sb.from("app_state")
+        .update({value: r.config, version: Number(row.version) + 1, updated_at: new Date().toISOString(), updated_by: "online"})
+        .eq("key", "schedule").eq("version", row.version).select("version");
+      if(error) throw new Error(error.message);
+      if(data && data.length) return cloudJson(200, {ok: true, config: r.config});
+    }
+    return cloudJson(409, {error: t("cloudConflict")});
+  }
+
+  async function cloudApi(url, opts){
+    const u = new URL(url, location.origin);
+    const p = u.pathname;
+    const method = (opts.method || "GET").toUpperCase();
+    if(!sb || !sbSession) return cloudJson(401, {error: "Avval tizimga kiring"});
+    try{
+      if(p === "/api/schedule"){
+        const row = await cloudState("schedule");
+        return row ? cloudJson(200, row.value) : cloudJson(503, {error: t("cloudNoSchedule")});
+      }
+      const op = p.startsWith("/api/") ? p.slice(5) : "";
+      if(method === "POST" && ScheduleCore.OPS.includes(op)) return await cloudMutate(op, JSON.parse(opts.body || "{}"));
+
+      if(p === "/api/log"){
+        const st = await cloudStatus();
+        return cloudJson(200, {rows: (st.log || []).slice(0, Number(u.searchParams.get("limit") || 50))});
+      }
+      if(p === "/api/audios"){
+        const st = await cloudStatus();
+        return cloudJson(200, {files: st.audios || [], library: st.library || []});
+      }
+      if(p === "/api/library" && method === "GET"){
+        const st = await cloudStatus();
+        return cloudJson(200, {sounds: st.library || [], sync: st.lib_sync || {}});
+      }
+      if(p === "/api/library/sync") return cloudJson(200, await cloudCommand("library_sync"));
+      if(p === "/api/public-holidays"){
+        const row = await cloudState("public_holidays");
+        return cloudJson(200, (row && row.value) || {fixed: [], dated: []});
+      }
+      // Mikrofon - maktab kompyuterining o'zida; AI kalitlari - faqat o'sha yerda kiritiladi
+      if(p === "/api/announce/status") return cloudJson(200, {running: false, error: null});
+      if(p.startsWith("/api/announce/") || p === "/api/ai/keys") return cloudJson(400, {error: t("cloudLocalOnly")});
+
+      if(p === "/api/ai/status"){
+        const st = await cloudStatus(true);
+        return cloudJson(200, st.ai || {});
+      }
+      if(p === "/api/ai/enhance") return cloudJson(200, await cloudCommand("ai_enhance", JSON.parse(opts.body || "{}")));
+      if(p === "/api/ai/tts"){
+        const res = await cloudCommand("ai_tts", JSON.parse(opts.body || "{}"));
+        return await cloudDownload("transfer", res.path);
+      }
+      if(p === "/api/ai/sample"){
+        const key = u.search;
+        if(!cloudSampleCache.has(key)){
+          const res = await cloudCommand("ai_sample", {voice: u.searchParams.get("voice"), tone: u.searchParams.get("tone")});
+          cloudSampleCache.set(key, res.path);
+        }
+        return await cloudDownload("transfer", cloudSampleCache.get(key));
+      }
+      if(p === "/api/ai/play"){
+        const path = "play/" + crypto.randomUUID() + ".wav";
+        const up = await sb.storage.from("transfer").upload(path, opts.body, {contentType: "audio/wav"});
+        if(up.error) throw new Error(up.error.message);
+        return cloudJson(200, await cloudCommand("ai_play", {path, volume: Number(u.searchParams.get("volume") || 100)}));
+      }
+      if(p === "/api/ai/stop") return cloudJson(200, await cloudCommand("ai_stop"));
+
+      // Ovozni oldindan eshitish: kutubxona fayli Supabase'dan, maktab kompyuteridagi boshqa fayllar - yo'q
+      if(p.startsWith("/audios/")){
+        const file = decodeURIComponent(p.slice("/audios/".length));
+        const item = libraryByFile.get(file);
+        if(!item) return cloudJson(404, {error: t("cloudLocalOnly")});
+        const { data, error } = await sb.from("sounds").select("storage_path").eq("id", item.id).single();
+        if(error) throw new Error(error.message);
+        return await cloudDownload("sounds", data.storage_path);
+      }
+      return cloudJson(404, {error: "Noma'lum API yo'li"});
+    }catch(e){
+      return cloudErr(e);
+    }
+  }
+
   async function api(url, opts){
+    if(CLOUD) return cloudApi(url, opts || {});
     const o = Object.assign({}, opts);
     o.headers = Object.assign({}, o.headers);
     if(sbSession && sbSession.access_token) o.headers.Authorization = "Bearer " + sbSession.access_token;
@@ -1563,6 +1751,13 @@
     });
 
     const pill = document.getElementById("connPill");
+    if(CLOUD){
+      // Onlayn panelda muhimi - maktab kompyuteri ishlayaptimi (qo'ng'iroqlar o'sha yerda chalinadi)
+      const known = !!cloudStatusCache;
+      pill.classList.toggle("off", known && !pcOnline);
+      document.getElementById("connText").textContent = t(!known ? "connWait" : pcOnline ? "cloudPcOn" : "cloudPcOff");
+      return;
+    }
     pill.classList.toggle("off", connTried && !connected);
     document.getElementById("connText").textContent = t(!connTried ? "connWait" : connected ? "connOn" : "connOff");
   }
@@ -2402,7 +2597,9 @@
     announceBusy = false; renderAnnounceBtn();
   });
 
-  setInterval(()=>{ if(authed) pollAnnounceStatus(); }, 3000);
+  setInterval(()=>{ if(authed && !CLOUD) pollAnnounceStatus(); }, 3000);
+  // Onlayn panel: maktab kompyuteri holati (onlayn/oflayn) har 10 soniyada yangilanadi
+  setInterval(()=>{ if(authed && CLOUD) cloudStatus(true).catch(()=>{}); }, 10000);
 
   // ---------- til va mavzu ----------
   const themeBtn = document.getElementById("themeBtn");
@@ -2567,8 +2764,7 @@
 
   async function initSupabase(){
     try{
-      const r = await fetch("/api/config");
-      const cfg = await r.json();
+      const cfg = CLOUD ? {enabled: true, url: CLOUD.url, anonKey: CLOUD.anonKey} : await (await fetch("/api/config")).json();
       sbEnabled = !!cfg.enabled;
       if(sbEnabled && window.supabase){
         sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
@@ -2589,7 +2785,7 @@
 
   function renderGate(){
     if(!sbInitDone){ gateBody.innerHTML = ""; return; }
-    if(!sbEnabled){ gateBody.innerHTML = `<div class="acc-note">${t("accNotConfigured")}</div>`; return; }
+    if(!sbEnabled){ renderSetupGate(); return; }
     if(!sb){ gateBody.innerHTML = `<div class="acc-note">${t("accNoLib")}</div>`; return; }
     // Parol maydoni qayta chizilib, yozilayotgan matn yo'qolmasligi uchun (til almashganda) oldingi qiymatlarni saqlaymiz
     const prevEmail = (document.getElementById("loginEmail") || {}).value || "";
@@ -2619,6 +2815,29 @@
       }finally{
         btn.disabled = false;
       }
+    });
+  }
+
+  // Birinchi ishga tushirish: kalitlar fayli (.env) yo'q - uni shu yerdan (masalan fleshkadan) tanlatamiz
+  function renderSetupGate(){
+    gateBody.innerHTML = `<div class="gate-form">
+        <h2>${t("setupTitle")}</h2>
+        <div class="acc-note">${t("setupText")}</div>
+        <label class="playbtn primary setup-pick">${t("setupPick")}<input type="file" id="setupFile" hidden></label>
+      </div>`;
+    document.getElementById("setupFile").addEventListener("change", async (e)=>{
+      const file = e.target.files[0];
+      e.target.value = "";
+      if(!file) return;
+      if(file.size > 64 * 1024){ notify("errMsg", {msg: esc(t("setupBadFile"))}, true); return; }
+      try{
+        const r = await fetch("/api/setup/env", {
+          method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({content: await file.text()})
+        });
+        if(!r.ok) throw await apiError(r);
+        notify("setupOk", null, false);
+        setTimeout(()=>location.reload(), 900);
+      }catch(err){ notifyError(err); }
     });
   }
 

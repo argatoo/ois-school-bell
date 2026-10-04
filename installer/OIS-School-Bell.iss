@@ -7,7 +7,7 @@
 ; Yasash: installer\README.md ga qarang (qisqasi: stage_runtime.py, keyin ISCC OIS-School-Bell.iss).
 
 #define AppName "OIS School Bell"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.2"
 #define AppPublisher "Oxford International School"
 
 ; ---- Maxfiy kalitlar (bell_web\.env) ----
@@ -55,8 +55,8 @@ russian.EnvTitle=Ключи Supabase
 english.EnvTitle=Supabase keys
 russian.EnvSubtitle=Файл настроек .env (библиотека музыки и вход в панель)
 english.EnvSubtitle=The .env settings file (music library and panel sign-in)
-russian.EnvText=Выберите файл .env (например, с флешки). Без него звонки по расписанию будут работать, но вход в панель и библиотека музыки - нет. Если программа уже была установлена, оставьте поле пустым - старый файл сохранится.
-english.EnvText=Select the .env file (for example, from a USB stick). Without it, scheduled bells still ring, but panel sign-in and the music library will not work. If the program was installed before, leave this empty to keep the existing file.
+russian.EnvText=Выберите файл .env (например, с флешки). Без него звонки по расписанию будут работать, но вход в панель и библиотека музыки - нет. Если программа уже была установлена, оставьте поле пустым - старый файл сохранится. Файл можно выбрать и позже - прямо в панели.
+english.EnvText=Select the .env file (for example, from a USB stick). Without it, scheduled bells still ring, but panel sign-in and the music library will not work. If the program was installed before, leave this empty to keep the existing file. You can also choose it later, right in the panel.
 russian.EnvLabel=Файл .env:
 english.EnvLabel=.env file:
 russian.EnvMissing=Указанный файл .env не найден.
@@ -82,6 +82,7 @@ Source: "..\bell_system\config\uz_holidays.json"; DestDir: "{app}\bell_system\co
 ; Boshqaruv paneli
 Source: "..\bell_web\server.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\ai.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
+Source: "..\bell_web\cloud_sync.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\add_user.js"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\package.json"; DestDir: "{app}\bell_web"; Flags: ignoreversion
 Source: "..\bell_web\.env.example"; DestDir: "{app}\bell_web"; Flags: ignoreversion
@@ -95,17 +96,14 @@ Source: "{code:EnvSource}"; DestDir: "{app}\bell_web"; DestName: ".env"; Flags: 
 ; Ishga tushirgichlar va icon
 Source: "files\start_scheduler.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\start_panel.vbs"; DestDir: "{app}"; Flags: ignoreversion
+Source: "files\open_panel.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\bell.ico"; DestDir: "{app}"; Flags: ignoreversion
 
-[INI]
-Filename: "{app}\panel.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://localhost:3000"
-Filename: "{app}\panel.url"; Section: "InternetShortcut"; Key: "IconFile"; String: "{app}\bell.ico"
-Filename: "{app}\panel.url"; Section: "InternetShortcut"; Key: "IconIndex"; String: "0"
-
 [Icons]
-Name: "{group}\{#AppName} - {cm:PanelShortcut}"; Filename: "{app}\panel.url"; IconFilename: "{app}\bell.ico"
+; Panel alohida dastur oynasida ochiladi (Edge/Chrome "ilova" rejimi - manzil satrisiz)
+Name: "{group}\{#AppName} - {cm:PanelShortcut}"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; IconFilename: "{app}\bell.ico"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#AppName}"; Filename: "{app}\panel.url"; IconFilename: "{app}\bell.ico"; Tasks: desktopicon
+Name: "{autodesktop}\{#AppName}"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; IconFilename: "{app}\bell.ico"; Tasks: desktopicon
 ; Windows'ga har kirilganda o'zi ishga tushadi (hech kimning qo'lisiz)
 Name: "{userstartup}\{#AppName} - qo'ng'iroqlar"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_scheduler.vbs"""; IconFilename: "{app}\bell.ico"
 Name: "{userstartup}\{#AppName} - panel"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_panel.vbs"""; IconFilename: "{app}\bell.ico"
@@ -113,12 +111,14 @@ Name: "{userstartup}\{#AppName} - panel"; Filename: "{sys}\wscript.exe"; Paramet
 [InstallDelete]
 ; Eski usul (o'rnatish.bat) qoldirgan yorliq - aks holda qo'ng'iroqlar ikki marta chalinardi
 Type: files; Name: "{userstartup}\OIS School Bell Scheduler.lnk"
+; 1.0.0 dagi brauzer yorlig'i (endi panel o'z oynasida ochiladi)
+Type: files; Name: "{app}\panel.url"
 
 [Run]
 ; O'rnatish tugashi bilan darrov ishga tushadi (kompyuterni qayta yoqish shart emas)
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_scheduler.vbs"""; Flags: nowait runhidden
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_panel.vbs"""; Flags: nowait runhidden
-Filename: "{app}\panel.url"; Description: "{cm:OpenPanel}"; Flags: postinstall shellexec nowait skipifsilent
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; Description: "{cm:OpenPanel}"; Flags: postinstall nowait skipifsilent
 
 [UninstallDelete]
 ; Qayta tiklanadigan fayllar (kesh). Jadval va jurnal (foydalanuvchi ma'lumotlari) saqlanib qoladi.

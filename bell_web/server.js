@@ -32,6 +32,22 @@ function loadEnvFile() {
 }
 loadEnvFile();
 
+// .env matnidan KALIT=qiymat juftlarini ajratib oladi
+function parseEnvText(raw) {
+  const out = {};
+  for (const line of raw.replace(/^\uFEFF/, "").split(/\r?\n/)) {
+    if (line.trim().startsWith("#")) continue;
+    const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/i.exec(line);
+    if (m) out[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+  return out;
+}
+
+function isLocalRequest(req) {
+  const a = req.socket.remoteAddress || "";
+  return a === "127.0.0.1" || a === "::1" || a === "::ffff:127.0.0.1";
+}
+
 // .env dagi qiymatlarni yangilaydi (bor qatorni almashtiradi, yo'g'ini oxiriga qo'shadi) va darhol kuchga kiritadi.
 // Panelning "AI kalitlari" bo'limi shu orqali kalitni saqlaydi - faylni qo'lda ochish shart emas.
 function saveEnvValues(values) {
@@ -68,16 +84,10 @@ const BUNDLED_PYTHON = path.join(__dirname, "..", "runtime", "python", "python.e
 const PYTHON_EXE = fs.existsSync(BUNDLED_PYTHON) ? BUNDLED_PYTHON : "python";
 const PUBLIC_DIR = path.join(__dirname, "public");
 
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-const MAX_RINGS = 20;
-const MAX_WEEKS = 520;
-
-function todayLocal() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+// Jadval qoidalari (tekshiruv, qo'shish/o'chirish) - lokal va onlayn panel uchun umumiy fayl
+const ScheduleCore = require("./public/schedule_core.js");
+const { createCloudSync } = require("./cloud_sync");
+const todayLocal = () => ScheduleCore.todayIn();
 
 function listAudioFiles() {
   try {
@@ -91,9 +101,22 @@ function listAudioFiles() {
 // Fayllar Supabase Storage'da saqlanadi. Maktab kompyuteri ularni audios/library/ ga
 // yuklab qo'yadi va bell_scheduler.py aynan shu lokal nusxadan chaladi, shuning uchun
 // internet uzilsa ham qo'ng'iroqlar ishlayveradi.
-const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// let: kalitlar o'rnatilgandan keyin paneldan ham kiritilishi mumkin (applySupabaseEnv)
+let SUPABASE_URL = "";
+let SUPABASE_ANON_KEY = "";
+let SUPABASE_SERVICE_KEY = "";
+let libSyncTimer = null;
+let cloud = null; // onlayn panel bilan sinxronlash (cloud_sync.js)
+function applySupabaseEnv() {
+  SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+  SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
+  SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (SUPABASE_URL && SUPABASE_SERVICE_KEY && !libSyncTimer) {
+    syncLibrary();
+    libSyncTimer = setInterval(syncLibrary, LIB_SYNC_EVERY_MS);
+  }
+  if (cloud) cloud.start();
+}
 const SOUNDS_BUCKET = "sounds";
 const LIB_DIR = path.join(AUDIO_DIR, "library");
 const LIB_INDEX = path.join(LIB_DIR, "index.json");
@@ -392,17 +415,9 @@ function readSchedule() {
   return JSON.parse(raw);
 }
 
-// 60 kundan ko'proq oldin tugagan yozuvlarni (eski ta'tillar, o'tgan bir martalik qo'ng'iroqlar) olib tashlaydi
-function pruneOld(list, dateOf) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60);
-  const pad = (n) => String(n).padStart(2, "0");
-  const c = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}-${pad(cutoff.getDate())}`;
-  return list.filter((x) => x && typeof x === "object" && String(dateOf(x) || "") >= c);
-}
-
 function writeSchedule(config) {
   fs.writeFileSync(SCHEDULE_PATH, JSON.stringify(config, null, 2) + "\n", "utf-8");
+  if (cloud) cloud.kick(); // onlayn panelga darhol yetkazish
 }
 
 // Juda oddiy CSV o'qish (bell_scheduler.py logs/bell_log.csv shu formatda yozadi:
@@ -436,71 +451,6 @@ function readLog(limit) {
   const rows = lines.slice(1).map(parseCsvLine).map(([vaqt, xabar]) => ({ vaqt, xabar }));
   rows.reverse(); // eng oxirgisi birinchi
   return limit ? rows.slice(0, limit) : rows;
-}
-
-// "YYYY-MM-DD" haqiqiy sanami (masalan 2026-02-30 emas)
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-function isValidDate(s) {
-  if (!DATE_RE.test(s || "")) return false;
-  const [y, m, d] = s.split("-").map(Number);
-  const dt = new Date(y, m - 1, d);
-  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
-}
-
-// Qo'ng'iroq maydonlarini tekshiradi (qo'shish va tahrirlash uchun umumiy).
-// oneTime = true - bir martalik qo'ng'iroq: hafta kunlari/hafta soni o'rniga aniq sana ("date").
-// Natija: { bell: {...} } yoki { error: "..." }
-function parseBellBody(body, oneTime = false) {
-  const { time, label, sound } = body;
-  if (!TIME_RE.test(time || "")) {
-    return { error: "Vaqt HH:MM formatida bo'lishi kerak (masalan 08:25)" };
-  }
-  if (!sound || !String(sound).trim()) {
-    return { error: "'sound' (ovoz fayli) maydoni kerak" };
-  }
-  if (oneTime) {
-    if (!isValidDate(body.date)) return { error: "Sana YYYY-MM-DD formatida bo'lishi kerak" };
-    if (body.date < todayLocal()) return { error: "O'tib ketgan sanaga qo'ng'iroq qo'yib bo'lmaydi" };
-  }
-  const days = oneTime ? null : Array.isArray(body.days) ? WEEKDAYS.filter((d) => body.days.includes(d)) : [];
-  if (!oneTime && !days.length) {
-    return { error: "Kamida bitta hafta kunini tanlang" };
-  }
-  const rings = body.rings === undefined || body.rings === null || body.rings === "" ? 1 : Number(body.rings);
-  if (!Number.isInteger(rings) || rings < 1 || rings > MAX_RINGS) {
-    return { error: `Takrorlanish soni 1 dan ${MAX_RINGS} gacha butun son bo'lishi kerak` };
-  }
-  const volume = body.volume === undefined || body.volume === null || body.volume === "" ? 100 : Number(body.volume);
-  if (!Number.isInteger(volume) || volume < 1 || volume > 100) {
-    return { error: "Ovoz balandligi 1 dan 100 gacha butun son (foiz) bo'lishi kerak" };
-  }
-  if (oneTime) {
-    return {
-      bell: {
-        date: body.date,
-        time,
-        label: (label && String(label).trim()) || "Bir martalik qo'ng'iroq",
-        sound: String(sound).trim(),
-        rings,
-        volume,
-      },
-    };
-  }
-  const weeks = body.weeks === undefined || body.weeks === null || body.weeks === "" ? null : Number(body.weeks);
-  if (weeks !== null && (!Number.isInteger(weeks) || weeks < 1 || weeks > MAX_WEEKS)) {
-    return { error: `Hafta soni 1 dan ${MAX_WEEKS} gacha butun son bo'lishi kerak (bo'sh = doimiy)` };
-  }
-  return {
-    bell: {
-      time,
-      label: (label && String(label).trim()) || "Qo'ng'iroq",
-      sound: String(sound).trim(),
-      days,
-      rings,
-      volume,
-      weeks,
-    },
-  };
 }
 
 function readBody(req) {
@@ -573,6 +523,20 @@ const server = http.createServer(async (req, res) => {
   try {
     // ---------- Kirish talab qilinadigan yo'llar ----------
     // Ochiq qoladigan yagona narsa: sahifaning o'zi va /api/config (login uchun kerak, unda maxfiy kalit yo'q).
+    // Birinchi sozlash: kalitlar hali yo'q bo'lsa, .env faylini paneldan yuklash (faqat shu kompyuterning o'zidan).
+    if (pathname === "/api/setup/env" && req.method === "POST") {
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) return sendJson(res, 403, { error: "Kalitlar allaqachon o'rnatilgan" });
+      if (!isLocalRequest(req)) return sendJson(res, 403, { error: "Kalitlarni faqat qo'ng'iroq kompyuterining o'zida kiritish mumkin" });
+      const body = await readBody(req);
+      const values = parseEnvText(String(body.content || ""));
+      if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(values.SUPABASE_URL || "") || !values.SUPABASE_ANON_KEY) {
+        return sendJson(res, 400, { error: "Bu fayl to'g'ri kalitlar fayli emas (ichida SUPABASE_URL va SUPABASE_ANON_KEY yo'q)" });
+      }
+      saveEnvValues(values);
+      applySupabaseEnv();
+      return sendJson(res, 200, { ok: true });
+    }
+
     if ((pathname.startsWith("/api/") && pathname !== "/api/config") || pathname.startsWith("/audios/")) {
       const auth = await checkAuth(req);
       if (!auth.ok) return sendJson(res, auth.status, { error: auth.error });
@@ -611,84 +575,14 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { sounds: readLibraryIndex(), sync: libSync });
     }
 
-    if (pathname === "/api/bell/add" && req.method === "POST") {
-      const parsed = parseBellBody(await readBody(req));
-      if (parsed.error) return sendJson(res, 400, { error: parsed.error });
-      const config = readSchedule();
-      config.bells = config.bells || [];
-      config.bells.push({
-        id: crypto.randomBytes(4).toString("hex"),
-        ...parsed.bell,
-        start_date: todayLocal(),
-      });
-      config.bells.sort((a, b) => a.time.localeCompare(b.time));
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    // Mavjud qo'ng'iroqni tahrirlash (id o'zgarmaydi)
-    if (pathname === "/api/bell/update" && req.method === "POST") {
-      const body = await readBody(req);
-      const parsed = parseBellBody(body);
-      if (parsed.error) return sendJson(res, 400, { error: parsed.error });
-      const config = readSchedule();
-      config.bells = config.bells || [];
-      const idx = config.bells.findIndex((b) => b.id === body.id);
-      if (idx === -1) {
-        return sendJson(res, 400, { error: "Bunday qo'ng'iroq topilmadi (o'chirilgan bo'lishi mumkin)" });
-      }
-      const old = config.bells[idx];
-      // Hafta soni o'zgarsa, hisob bugundan qaytadan boshlanadi; o'zgarmasa - eski boshlanish sanasi qoladi
-      const start_date = old.weeks === parsed.bell.weeks && old.start_date ? old.start_date : todayLocal();
-      config.bells[idx] = { id: old.id, ...parsed.bell, start_date };
-      config.bells.sort((a, b) => a.time.localeCompare(b.time));
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    if (pathname === "/api/bell/remove" && req.method === "POST") {
-      const body = await readBody(req);
-      const config = readSchedule();
-      const before = (config.bells || []).length;
-      config.bells = (config.bells || []).filter((b) => b.id !== body.id);
-      if (config.bells.length === before) {
-        return sendJson(res, 400, { error: "Bunday qo'ng'iroq topilmadi" });
-      }
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    // ---------- Kalendar: dam olish kunlari / ta'tillar ----------
-    // Shu kunlari jadvaldagi (haftalik) qo'ng'iroqlar chalinmaydi.
-    if (pathname === "/api/holiday/add" && req.method === "POST") {
-      const body = await readBody(req);
-      const start = String(body.start || "");
-      const end = String(body.end || body.start || "");
-      if (!isValidDate(start) || !isValidDate(end)) return sendJson(res, 400, { error: "Sanalar YYYY-MM-DD formatida bo'lishi kerak" });
-      if (end < start) return sendJson(res, 400, { error: "Tugash sanasi boshlanish sanasidan oldin bo'lishi mumkin emas" });
-      if (end < todayLocal()) return sendJson(res, 400, { error: "O'tib ketgan sanalarni belgilash shart emas" });
-      const days = (new Date(end) - new Date(start)) / 86400000;
-      if (days > 366) return sendJson(res, 400, { error: "Ko'pi bilan 1 yillik oraliq belgilash mumkin" });
-      const config = readSchedule();
-      config.holidays = pruneOld(config.holidays || [], (h) => h.end || h.start);
-      config.holidays.push({
-        id: crypto.randomBytes(4).toString("hex"),
-        start, end,
-        label: String(body.label || "").trim().slice(0, 200) || "Dam olish kuni",
-      });
-      config.holidays.sort((a, b) => a.start.localeCompare(b.start));
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    if (pathname === "/api/holiday/remove" && req.method === "POST") {
-      const body = await readBody(req);
-      const config = readSchedule();
-      const before = (config.holidays || []).length;
-      config.holidays = (config.holidays || []).filter((h) => h.id !== body.id);
-      if (config.holidays.length === before) return sendJson(res, 400, { error: "Bunday dam olish kuni topilmadi" });
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
+    // ---------- Jadvalni o'zgartirish: qo'ng'iroqlar, dam olish kunlari, bir martalik qo'ng'iroqlar ----------
+    // Qoidalar public/schedule_core.js da (onlayn panel ham aynan shularni ishlatadi).
+    const scheduleOp = pathname.startsWith("/api/") ? pathname.slice(5) : "";
+    if (ScheduleCore.OPS.includes(scheduleOp) && req.method === "POST") {
+      const result = ScheduleCore.applyOp(scheduleOp, readSchedule(), await readBody(req), todayLocal());
+      if (result.error) return sendJson(res, 400, { error: result.error });
+      writeSchedule(result.config);
+      return sendJson(res, 200, { ok: true, config: result.config });
     }
 
     // ---------- Kalendar: O'zbekiston davlat bayramlari ----------
@@ -696,37 +590,6 @@ const server = http.createServer(async (req, res) => {
       let data = { fixed: [], dated: [] };
       try { data = JSON.parse(fs.readFileSync(PUBLIC_HOLIDAYS_PATH, "utf-8")); } catch { /* fayl yo'q - bo'sh ro'yxat */ }
       return sendJson(res, 200, { fixed: data.fixed || [], dated: data.dated || [] });
-    }
-
-    // Davlat bayramlarida jadvaldagi qo'ng'iroqlar chalinsinmi (standart: chalinmaydi)
-    if (pathname === "/api/settings/public-holidays" && req.method === "POST") {
-      const body = await readBody(req);
-      const config = readSchedule();
-      config.public_holidays = body.enabled !== false;
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    // ---------- Kalendar: bir martalik qo'ng'iroqlar (aniq sanaga) ----------
-    if (pathname === "/api/event/add" && req.method === "POST") {
-      const parsed = parseBellBody(await readBody(req), true);
-      if (parsed.error) return sendJson(res, 400, { error: parsed.error });
-      const config = readSchedule();
-      config.events = pruneOld(config.events || [], (e) => e.date);
-      config.events.push({ id: crypto.randomBytes(4).toString("hex"), ...parsed.bell });
-      config.events.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
-    }
-
-    if (pathname === "/api/event/remove" && req.method === "POST") {
-      const body = await readBody(req);
-      const config = readSchedule();
-      const before = (config.events || []).length;
-      config.events = (config.events || []).filter((e) => e.id !== body.id);
-      if (config.events.length === before) return sendJson(res, 400, { error: "Bunday bir martalik qo'ng'iroq topilmadi" });
-      writeSchedule(config);
-      return sendJson(res, 200, { ok: true, config });
     }
 
     if (pathname === "/api/announce/status" && req.method === "GET") {
@@ -838,10 +701,21 @@ server.listen(PORT, () => {
   console.log(`  ${fs.existsSync(LOG_PATH) ? "(topildi)" : "(hali yaratilmagan - bell_scheduler.py ishga tushganda paydo bo'ladi)"}\n`);
 });
 
-if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
-  syncLibrary();
-  setInterval(syncLibrary, LIB_SYNC_EVERY_MS);
+// Onlayn panel: jadval, holat va buyruqlar Supabase orqali (maktab kompyuteri faqat o'zi murojaat qiladi).
+// CLOUD_SYNC=off - shu kompyuter onlayn panelga ulanmaydi (masalan, sinov kompyuteri).
+if (String(process.env.CLOUD_SYNC || "").toLowerCase() !== "off") {
+  cloud = createCloudSync({
+    env: () => ({ url: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }),
+    schedulePath: SCHEDULE_PATH,
+    stateDir: path.join(__dirname, ".cache"),
+    publicHolidaysPath: PUBLIC_HOLIDAYS_PATH,
+    sampleCacheDir: SAMPLE_CACHE_DIR,
+    ai, syncLibrary, readLibraryIndex, libSync, listAudioFiles, readLog,
+    liveStatus, playLive, stopLive,
+    engineStatus: () => engineCall("GET", "/status"),
+  });
 }
+applySupabaseEnv();
 
 process.on("SIGINT", () => { stopAnnounce(); if (liveProc) liveProc.kill(); process.exit(0); });
 process.on("SIGTERM", () => { stopAnnounce(); if (liveProc) liveProc.kill(); process.exit(0); });

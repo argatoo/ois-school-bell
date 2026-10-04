@@ -3,6 +3,12 @@ bell_system/logs/*.csv
 bell_system/audios/library/
 bell_system/audios/_live/
 bell_web/.cache/
+# Onlayn panelning yig'ilgan nusxasi (node bell_web/cloud/build.js) va Vercel sozlamasi
+bell_web/cloud/dist/
+.vercel/
+# Claude Code'ning shu kompyuterga xos sozlamalari
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 # o'rnatish.bat / install.ps1 har kompyuterda o'zi yasaydi (ichida shu kompyuterdagi Python yo'li)
 bell_system/start_bell_scheduler.vbs
 bell_system.zip
