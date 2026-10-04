@@ -34,6 +34,10 @@ if (-not (Test-Path "$here\build\runtime\python\pythonw.exe")) {
   if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
+# Panelning alohida dasturi (OISSchoolBell.exe)
+powershell -NoProfile -ExecutionPolicy Bypass -File "$here\build_app.ps1"
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
 & $iscc "$here\OIS-School-Bell.iss"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host ""

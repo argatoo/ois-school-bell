@@ -7,7 +7,7 @@
 ; Yasash: installer\README.md ga qarang (qisqasi: stage_runtime.py, keyin ISCC OIS-School-Bell.iss).
 
 #define AppName "OIS School Bell"
-#define AppVersion "1.0.6"
+#define AppVersion "1.1.0"
 #define AppPublisher "Oxford International School"
 
 ; ---- Maxfiy kalitlar (bell_web\.env) ----
@@ -100,12 +100,14 @@ Source: "files\start_scheduler.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\start_panel.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\open_panel.vbs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\bell.ico"; DestDir: "{app}"; Flags: ignoreversion
+; Panelning alohida dasturi (WebView2 oynasi) - build_app.ps1 yig'adi
+Source: "build\app\*"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-; Panel alohida dastur oynasida ochiladi (Edge/Chrome "ilova" rejimi - manzil satrisiz)
-Name: "{group}\{#AppName} - {cm:PanelShortcut}"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; IconFilename: "{app}\bell.ico"
+; Panel o'z dasturida ochiladi (OISSchoolBell.exe - brauzersiz, vazifalar panelida o'z belgisi bilan)
+Name: "{group}\{#AppName} - {cm:PanelShortcut}"; Filename: "{app}\OISSchoolBell.exe"; AppUserModelID: "OIS.SchoolBell.Panel"
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#AppName}"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; IconFilename: "{app}\bell.ico"; Tasks: desktopicon
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\OISSchoolBell.exe"; AppUserModelID: "OIS.SchoolBell.Panel"; Tasks: desktopicon
 ; Windows'ga har kirilganda o'zi ishga tushadi (hech kimning qo'lisiz)
 Name: "{userstartup}\{#AppName} - qo'ng'iroqlar"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_scheduler.vbs"""; IconFilename: "{app}\bell.ico"
 Name: "{userstartup}\{#AppName} - panel"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_panel.vbs"""; IconFilename: "{app}\bell.ico"
@@ -120,7 +122,7 @@ Type: files; Name: "{app}\panel.url"
 ; O'rnatish tugashi bilan darrov ishga tushadi (kompyuterni qayta yoqish shart emas)
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_scheduler.vbs"""; Flags: nowait runhidden
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\start_panel.vbs"""; Flags: nowait runhidden
-Filename: "{sys}\wscript.exe"; Parameters: """{app}\open_panel.vbs"""; Description: "{cm:OpenPanel}"; Flags: postinstall nowait skipifsilent
+Filename: "{app}\OISSchoolBell.exe"; Description: "{cm:OpenPanel}"; Flags: postinstall nowait skipifsilent
 
 [UninstallDelete]
 ; Qayta tiklanadigan fayllar (kesh). Jadval va jurnal (foydalanuvchi ma'lumotlari) saqlanib qoladi.
@@ -148,8 +150,9 @@ begin
   Legacy := '';
   if IncludeLegacy then
     Legacy := ' -or ($_.CommandLine -like ''*bell_scheduler.py*'')';
-  Cmd := '-NoProfile -ExecutionPolicy Bypass -Command "$r = ''' + AppPath + '\runtime\''; ' +
-         'Get-CimInstance Win32_Process | Where-Object { ($_.ExecutablePath -and $_.ExecutablePath.StartsWith($r, [StringComparison]::OrdinalIgnoreCase))' + Legacy + ' } | ' +
+  // runtime\ ichidagi Python/Node jarayonlari va panel dasturi (OISSchoolBell.exe) - fayllar band bo'lmasligi uchun
+  Cmd := '-NoProfile -ExecutionPolicy Bypass -Command "$r = ''' + AppPath + '\runtime\''; $a = ''' + AppPath + '\OISSchoolBell.exe''; ' +
+         'Get-CimInstance Win32_Process | Where-Object { ($_.ExecutablePath -and ($_.ExecutablePath.StartsWith($r, [StringComparison]::OrdinalIgnoreCase) -or $_.ExecutablePath -eq $a))' + Legacy + ' } | ' +
          'ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"';
   Exec('powershell.exe', Cmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
