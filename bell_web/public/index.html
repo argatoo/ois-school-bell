@@ -1608,6 +1608,23 @@
     throw new Error(t("cloudCmdTimeout"));
   }
 
+  // Kutubxona ro'yxati to'g'ridan-to'g'ri Supabase'dan (maktab kompyuteri oflayn bo'lsa yoki yangi ovozni
+  // hali yuklab olmagan bo'lsa ham nomlar to'g'ri ko'rinadi). Fayl nomi server.js dagi libraryFileName bilan bir xil.
+  let cloudLibCache = null, cloudLibAt = 0;
+  async function cloudLibrary(){
+    if(cloudLibCache && Date.now() - cloudLibAt < 30000) return cloudLibCache;
+    const { data, error } = await sb.from("sounds")
+      .select("id,name,kind,storage_path,size_bytes,duration_seconds").order("created_at", {ascending: true});
+    if(error) throw new Error(error.message);
+    cloudLibCache = (data || []).map(r=>({
+      id: r.id, name: r.name, kind: r.kind,
+      file: "library/" + r.id + (/\.wav$/i.test(r.storage_path || "") ? ".wav" : ".mp3"),
+      size: r.size_bytes, duration: r.duration_seconds,
+    }));
+    cloudLibAt = Date.now();
+    return cloudLibCache;
+  }
+
   async function cloudDownload(bucket, path){
     const { data, error } = await sb.storage.from(bucket).download(path);
     if(error) throw new Error(error.message);
@@ -1650,13 +1667,17 @@
       }
       if(p === "/api/audios"){
         const st = await cloudStatus();
-        return cloudJson(200, {files: st.audios || [], library: st.library || []});
+        return cloudJson(200, {files: st.audios || [], library: await cloudLibrary()});
       }
       if(p === "/api/library" && method === "GET"){
         const st = await cloudStatus();
-        return cloudJson(200, {sounds: st.library || [], sync: st.lib_sync || {}});
+        return cloudJson(200, {sounds: await cloudLibrary(), sync: st.lib_sync || {}});
       }
-      if(p === "/api/library/sync") return cloudJson(200, await cloudCommand("library_sync"));
+      if(p === "/api/library/sync"){
+        const res = await cloudCommand("library_sync");
+        cloudLibAt = 0;
+        return cloudJson(200, {...res, sounds: await cloudLibrary()});
+      }
       if(p === "/api/public-holidays"){
         const row = await cloudState("public_holidays");
         return cloudJson(200, (row && row.value) || {fixed: [], dated: []});
@@ -2754,6 +2775,23 @@
   setInterval(()=>{ if(authed && !CLOUD) pollAnnounceStatus(); }, 3000);
   // Onlayn panel: maktab kompyuteri holati (onlayn/oflayn) har 10 soniyada yangilanadi
   setInterval(()=>{ if(authed && CLOUD) cloudStatus(true).catch(()=>{}); }, 10000);
+
+  // Onlayn panel: sayt yangilansa (yangi versiya joylansa), ochiq sahifa o'zi qayta yuklanadi -
+  // eski nusxa uzoq vaqt ochiq qolib ketmasligi uchun. Oyna (dialog) ochiq bo'lsa - yopilishini kutadi.
+  if(CLOUD){
+    let siteTag = null;
+    const checkSiteVersion = async ()=>{
+      try{
+        const r = await fetch("/", {method: "HEAD", cache: "no-store"});
+        const tag = r.headers.get("etag") || r.headers.get("last-modified");
+        if(!tag) return;
+        if(siteTag && tag !== siteTag && !document.querySelector("dialog[open]")) location.reload();
+        else if(!siteTag) siteTag = tag;
+      }catch(e){ /* internet yo'q - keyinroq */ }
+    };
+    checkSiteVersion();
+    setInterval(checkSiteVersion, 120000);
+  }
 
   // ---------- til va mavzu ----------
   const themeBtn = document.getElementById("themeBtn");
