@@ -805,7 +805,7 @@
       <label for="bellVolume" data-i18n="fieldVolume"></label>
       <div class="vol-row">
         <svg class="vol-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/></svg>
-        <input type="range" id="bellVolume" min="5" max="100" step="5" value="100">
+        <input type="range" id="bellVolume" min="5" max="100" step="5" value="80">
         <svg class="vol-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
         <span class="vol-val mono" id="bellVolumeVal">100%</span>
       </div>
@@ -2325,6 +2325,8 @@
     dlgTitle.textContent = t(dlgTitle.dataset.i18n);
     bellAddBtn.textContent = t(bellAddBtn.dataset.i18n);
   }
+  const DEFAULT_VOLUME = 80; // yangi qo'ng'iroqning standart ovoz balandligi (maktab qarori)
+
   // Guruh rangi tanlagichi ("rangsiz" + ScheduleCore.COLORS)
   const colorPicks = document.getElementById("colorPicks");
   let selectedColor = null;
@@ -2346,7 +2348,7 @@
   function resetBellForm(){
     bellTime.value = ""; bellLabel.value = "";
     bellRings.value = "1"; bellWeeks.value = "";
-    bellVolume.value = "100"; syncVolume();
+    bellVolume.value = String(DEFAULT_VOLUME); syncVolume();
     selectedDays = new Set(WD_KEYS.slice(0, 5)); renderDayChips();
     selectedColor = null; renderColorPicks();
   }
@@ -2417,7 +2419,7 @@
       await postJson("/api/event/add", {date, time, label, sound, rings, volume, color: selectedColor});
       notify("okEvAdded", {date: esc(fmtDateHuman(date)), time: esc(time)}, false);
       bellTime.value = ""; bellLabel.value = ""; bellRings.value = "1";
-      bellVolume.value = "100"; syncVolume();
+      bellVolume.value = String(DEFAULT_VOLUME); syncVolume();
       calSel = date;
       closeBellDialog();
     }catch(e){
@@ -2487,7 +2489,7 @@
         notify("okAdded", {time}, false);
         bellTime.value = ""; bellLabel.value = "";
         bellRings.value = "1"; bellWeeks.value = "";
-        bellVolume.value = "100"; syncVolume();
+        bellVolume.value = String(DEFAULT_VOLUME); syncVolume();
       }
       closeBellDialog();
     }catch(e){
