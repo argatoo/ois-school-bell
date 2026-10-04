@@ -16,6 +16,9 @@
   const MAX_RINGS = 20;
   const MAX_WEEKS = 520;
   const PRUNE_DAYS = 60;
+  // Qo'ng'iroq guruhlarini ajratish uchun rang (ixtiyoriy). Faqat shu nomlar saqlanadi.
+  const COLORS = ["red", "orange", "yellow", "green", "teal", "blue", "purple", "pink"];
+  const colorOf = (body) => (COLORS.includes(body.color) ? body.color : null);
 
   const pad = (n) => String(n).padStart(2, "0");
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -90,6 +93,7 @@
           sound: String(sound).trim(),
           rings,
           volume,
+          color: colorOf(body),
         },
       };
     }
@@ -106,6 +110,7 @@
         rings,
         volume,
         weeks,
+        color: colorOf(body),
       },
     };
   }
@@ -201,5 +206,5 @@
     return fn(JSON.parse(JSON.stringify(config || {})), body || {}, today || todayIn());
   }
 
-  return { OPS: Object.keys(OPS), applyOp, parseBellBody, isValidDate, todayIn, WEEKDAYS };
+  return { OPS: Object.keys(OPS), applyOp, parseBellBody, isValidDate, todayIn, WEEKDAYS, COLORS };
 });

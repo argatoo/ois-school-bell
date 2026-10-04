@@ -380,6 +380,18 @@
   .bell-list{display:flex;flex-direction:column;gap:6px}
   .bell-row{display:grid;grid-template-columns:56px 1fr auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:var(--panel-2);font-size:13px}
   .bell-row.expired{opacity:.5}
+  /* Qo'ng'iroq guruhi rangi (ixtiyoriy): ro'yxatda chap chiziq, kun jadvalida nuqta */
+  [data-color="red"]{--bc:#e5484d} [data-color="orange"]{--bc:#f76b15} [data-color="yellow"]{--bc:#e2a336}
+  [data-color="green"]{--bc:#30a46c} [data-color="teal"]{--bc:#12a594} [data-color="blue"]{--bc:#3e63dd}
+  [data-color="purple"]{--bc:#8e4ec6} [data-color="pink"]{--bc:#d6409f}
+  .bell-row[data-color]{border-left:5px solid var(--bc);padding-left:9px}
+  .bell-row[data-color] .t{color:var(--bc)}
+  .tl-row[data-color] .dot{background:var(--bc);width:10px;height:10px}
+  .color-picks{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .color-pick{width:28px;height:28px;border-radius:50%;border:2px solid transparent;background:var(--bc, transparent);cursor:pointer;padding:0;display:grid;place-items:center;color:#fff;font-size:14px;line-height:1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+  .color-pick.none{background:var(--panel-2);color:var(--text-dim);box-shadow:inset 0 0 0 1px var(--line)}
+  .color-pick:hover{transform:scale(1.08)}
+  .color-pick.on{border-color:var(--text);outline:2px solid var(--bg);outline-offset:-4px}
   .bell-row.selectable{cursor:pointer;user-select:none;transition:box-shadow .12s ease}
   .bell-row.selectable:hover{box-shadow:inset 0 0 0 1px var(--line)}
   .bell-row.selected,.bell-row.selected:hover{box-shadow:inset 0 0 0 2px var(--accent)}
@@ -759,6 +771,12 @@
     </div>
     <button type="button" class="link-btn" id="goLibraryBtn" data-i18n="soundAddHint"></button>
 
+    <!-- Guruh rangi: qo'ng'iroqlarni (masalan, 1-sinflar / 5-11 sinflar) ro'yxatda ajratib ko'rsatish uchun -->
+    <div class="field">
+      <label data-i18n="fieldColor"></label>
+      <div class="color-picks" id="colorPicks"></div>
+    </div>
+
     <div id="bellDaysBlock">
       <div class="days-head">
         <label data-i18n="fieldDays"></label>
@@ -902,6 +920,9 @@
       cloudConflict: "Jadval shu payt boshqa joyda ham o'zgardi - qayta urinib ko'ring",
       cloudLocalOnly: "Bu imkoniyat faqat maktab kompyuterining o'zida ishlaydi",
       bellCopyHint: "Bosib tanlang: Ctrl+C - nusxalash, Ctrl+V - nusxasini qo'shish",
+      fieldColor: "Guruh rangi (ixtiyoriy)", colorNone: "Rangsiz",
+      color_red: "Qizil", color_orange: "To'q sariq", color_yellow: "Sariq", color_green: "Yashil",
+      color_teal: "Moviy-yashil", color_blue: "Ko'k", color_purple: "Binafsha", color_pink: "Pushti",
       okBellCopied: "Nusxalandi: {time} - {label}. Ctrl+V bosing - nusxasi tahrirlash oynasida ochiladi.",
       okBellPasted: "Nusxa ochildi - vaqtini (kerak bo'lsa boshqa maydonlarni) o'zgartirib, «Qo'shish» ni bosing.",
       accNoLib: "Supabase kutubxonasini yuklab bo'lmadi (internet kerak). Qo'ng'iroqlar lokal nusxadan ishlayveradi.",
@@ -1051,6 +1072,9 @@
       cloudConflict: "Расписание только что изменили в другом месте - попробуйте ещё раз",
       cloudLocalOnly: "Эта функция работает только на самом школьном компьютере",
       bellCopyHint: "Нажмите, чтобы выбрать: Ctrl+C - копировать, Ctrl+V - добавить копию",
+      fieldColor: "Цвет группы (необязательно)", colorNone: "Без цвета",
+      color_red: "Красный", color_orange: "Оранжевый", color_yellow: "Жёлтый", color_green: "Зелёный",
+      color_teal: "Бирюзовый", color_blue: "Синий", color_purple: "Фиолетовый", color_pink: "Розовый",
       okBellCopied: "Скопировано: {time} - {label}. Нажмите Ctrl+V - копия откроется в окне редактирования.",
       okBellPasted: "Копия открыта - измените время (и при необходимости другие поля) и нажмите «Добавить».",
       accNoLib: "Не удалось загрузить библиотеку Supabase (нужен интернет). Звонки продолжат работать с локальных копий.",
@@ -1200,6 +1224,9 @@
       cloudConflict: "The schedule was just changed somewhere else - please try again",
       cloudLocalOnly: "This feature works only on the school computer itself",
       bellCopyHint: "Click to select: Ctrl+C - copy, Ctrl+V - add a copy",
+      fieldColor: "Group color (optional)", colorNone: "No color",
+      color_red: "Red", color_orange: "Orange", color_yellow: "Yellow", color_green: "Green",
+      color_teal: "Teal", color_blue: "Blue", color_purple: "Purple", color_pink: "Pink",
       okBellCopied: "Copied: {time} - {label}. Press Ctrl+V - the copy opens in the edit window.",
       okBellPasted: "Copy opened - change the time (and other fields if needed) and press «Add».",
       accNoLib: "Could not load the Supabase library (internet required). Bells keep working from local copies.",
@@ -1844,6 +1871,7 @@
       if(past) cls += " past";
       if(playing){ cls += " now"; if(!nowEvent) nowEvent = ev; }
       row.className = cls;
+      if(ScheduleCore.COLORS.includes(ev.color)) row.dataset.color = ev.color;
       // Har bir qatorda ham o'sha qo'ng'iroqgacha qolgan vaqt (yoki "chalinmoqda") ko'rsatiladi
       const countdown = playing ? `<span class="tl-countdown">${t("tlPlaying")}</span>`
         : past ? ""
@@ -1950,6 +1978,7 @@
       const row = document.createElement("div");
       row.className = "bell-row selectable" + (expired ? " expired" : "") + (b.id === selectedBellId ? " selected" : "");
       row.dataset.id = b.id;
+      if(ScheduleCore.COLORS.includes(b.color)) row.dataset.color = b.color;
       row.title = t("bellCopyHint");
       const dots = WD_KEYS.map(k=>`<span class="${(b.days||[]).includes(k) ? "on" : ""}">${raw("wdShort")[wdIndex(k)]}</span>`).join("");
       let weeksText;
@@ -2017,7 +2046,8 @@
   function selectedBellData(){
     const b = selectedBellId && getBells().find(x=>x.id === selectedBellId);
     return b ? {type: BELL_CLIP_TYPE, time: b.time, label: b.label, sound: b.sound,
-                days: b.days || [], rings: b.rings || 1, volume: b.volume || 100, weeks: b.weeks || null} : null;
+                days: b.days || [], rings: b.rings || 1, volume: b.volume || 100, weeks: b.weeks || null,
+                color: b.color || null} : null;
   }
   function openPastedBell(data){
     if(document.querySelector("dialog[open]")) return;
@@ -2274,11 +2304,30 @@
     dlgTitle.textContent = t(dlgTitle.dataset.i18n);
     bellAddBtn.textContent = t(bellAddBtn.dataset.i18n);
   }
+  // Guruh rangi tanlagichi ("rangsiz" + ScheduleCore.COLORS)
+  const colorPicks = document.getElementById("colorPicks");
+  let selectedColor = null;
+  function renderColorPicks(){
+    colorPicks.innerHTML = [null, ...ScheduleCore.COLORS].map(c=>{
+      const name = esc(t(c ? "color_" + c : "colorNone"));
+      return `<button type="button" class="color-pick${c ? "" : " none"}${c === selectedColor ? " on" : ""}"${c ? ` data-color="${c}"` : ""}
+        data-pick="${c || ""}" title="${name}" aria-label="${name}" aria-pressed="${c === selectedColor}">${c ? (c === selectedColor ? "&#10003;" : "") : "&empty;"}</button>`;
+    }).join("");
+  }
+  colorPicks.addEventListener("click", (e)=>{
+    const btn = e.target.closest(".color-pick");
+    if(!btn) return;
+    selectedColor = btn.dataset.pick || null;
+    renderColorPicks();
+  });
+  renderColorPicks();
+
   function resetBellForm(){
     bellTime.value = ""; bellLabel.value = "";
     bellRings.value = "1"; bellWeeks.value = "";
     bellVolume.value = "100"; syncVolume();
     selectedDays = new Set(WD_KEYS.slice(0, 5)); renderDayChips();
+    selectedColor = null; renderColorPicks();
   }
   function fillBellForm(b){
     bellTime.value = b.time;
@@ -2287,6 +2336,7 @@
     bellWeeks.value = b.weeks ? String(b.weeks) : "";
     bellVolume.value = String(b.volume || 100); syncVolume();
     selectedDays = new Set(b.days || []); renderDayChips();
+    selectedColor = ScheduleCore.COLORS.includes(b.color) ? b.color : null; renderColorPicks();
     renderSoundOptions(b.sound);
   }
   function openBellDialog(bell){
@@ -2343,7 +2393,7 @@
     dlgError.hidden = true;
     busy = true; bellAddBtn.disabled = true;
     try{
-      await postJson("/api/event/add", {date, time, label, sound, rings, volume});
+      await postJson("/api/event/add", {date, time, label, sound, rings, volume, color: selectedColor});
       notify("okEvAdded", {date: esc(fmtDateHuman(date)), time: esc(time)}, false);
       bellTime.value = ""; bellLabel.value = ""; bellRings.value = "1";
       bellVolume.value = "100"; syncVolume();
@@ -2407,7 +2457,7 @@
     dlgError.hidden = true;
     busy = true; bellAddBtn.disabled = true; renderBellList();
     try{
-      const payload = {time, label, sound, days: WD_KEYS.filter(k=>selectedDays.has(k)), rings, volume, weeks};
+      const payload = {time, label, sound, days: WD_KEYS.filter(k=>selectedDays.has(k)), rings, volume, weeks, color: selectedColor};
       if(editingBell){
         await postJson("/api/bell/update", {...payload, id: editingBell.id});
         notify("okUpdated", {time}, false);
@@ -2486,6 +2536,9 @@
   }
 
   // Tanlangan kun: dam olish kunimi, qaysi qo'ng'iroqlar chalinadi
+  // Ro'yxat qatoriga guruh rangi (faqat ma'lum rang nomlari - HTML ga xavfsiz)
+  function colorAttr(b){ return b && ScheduleCore.COLORS.includes(b.color) ? ` data-color="${b.color}"` : ""; }
+
   function renderCalDay(){
     const d = parseDateStr(calSel);
     const todayStr = dateStrOf(new Date());
@@ -2499,7 +2552,7 @@
       : t("calHolidayNote", {label: esc(hol.label)});
     const list = bellsOn(d);
     calDayCount.textContent = list.length ? t("nBells", {n: list.length}) : "";
-    calDayList.innerHTML = list.length ? list.map(b=>`<div class="tl-row">
+    calDayList.innerHTML = list.length ? list.map(b=>`<div class="tl-row"${colorAttr(b)}>
         <div class="t mono">${esc(b.time)}</div><div class="dot"></div>
         <div><div>${esc(b.label)}</div><div class="snd mono">${esc(soundLabel(b.sound))}</div></div>
         <div class="tl-right">${oneTimeBadge(b)}${ringsBadge(b)}${volumeBadge(b)}</div>
@@ -2552,7 +2605,7 @@
     const todayStr = dateStrOf(new Date());
     const list = getEvents().filter(e => e && e.date >= todayStr);
     evCount.textContent = list.length ? String(list.length) : "";
-    evList.innerHTML = list.length ? list.map(e=>`<div class="bell-row" data-id="${esc(e.id)}">
+    evList.innerHTML = list.length ? list.map(e=>`<div class="bell-row" data-id="${esc(e.id)}"${colorAttr(e)}>
         <div class="t date mono">${esc(fmtShortDate(e.date))}<br>${esc(e.time)}</div>
         <div><div>${esc(e.label)}</div><div class="snd mono">${esc(fmtDateHuman(e.date))} · ${esc(soundLabel(e.sound))}</div></div>
         <div class="meta">${ringsBadge(e)}${volumeBadge(e)}</div>
