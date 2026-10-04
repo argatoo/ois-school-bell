@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OIS School Bell</title>
+<!-- Dastur oynasi, vazifalar paneli va telefon bosh ekranida qo'ng'iroq belgisi ko'rinadi -->
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
 <script>
   // Sahifa chizilishidan oldin saqlangan mavzu va tilni qo'llash (yonib ketmasligi uchun)
   (function(){
@@ -377,6 +380,9 @@
   .bell-list{display:flex;flex-direction:column;gap:6px}
   .bell-row{display:grid;grid-template-columns:56px 1fr auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:var(--panel-2);font-size:13px}
   .bell-row.expired{opacity:.5}
+  .bell-row.selectable{cursor:pointer;user-select:none;transition:box-shadow .12s ease}
+  .bell-row.selectable:hover{box-shadow:inset 0 0 0 1px var(--line)}
+  .bell-row.selected,.bell-row.selected:hover{box-shadow:inset 0 0 0 2px var(--accent)}
   .bell-row .t{font-weight:600;color:var(--accent)}
   .bell-row .snd{font-size:11px;color:var(--text-dim)}
   .bell-row .daydots{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
@@ -397,6 +403,7 @@
 
   footer{text-align:center;font-size:11.5px;color:var(--text-dim);padding-top:6px}
   footer b{color:var(--text)}
+  footer a{color:var(--accent)}
   footer code{background:var(--panel-2);padding:1px 6px;border-radius:8px}
 
   /* ---------- Kirish ekrani: tizimga kirmaguncha panelning qolgan qismi ko'rinmaydi ---------- */
@@ -894,6 +901,9 @@
       cloudNoSchedule: "Maktab kompyuteri hali jadvalni yubormagan - dastur o'sha kompyuterda ishga tushganini tekshiring",
       cloudConflict: "Jadval shu payt boshqa joyda ham o'zgardi - qayta urinib ko'ring",
       cloudLocalOnly: "Bu imkoniyat faqat maktab kompyuterining o'zida ishlaydi",
+      bellCopyHint: "Bosib tanlang: Ctrl+C - nusxalash, Ctrl+V - nusxasini qo'shish",
+      okBellCopied: "Nusxalandi: {time} - {label}. Ctrl+V bosing - nusxasi tahrirlash oynasida ochiladi.",
+      okBellPasted: "Nusxa ochildi - vaqtini (kerak bo'lsa boshqa maydonlarni) o'zgartirib, «Qo'shish» ni bosing.",
       accNoLib: "Supabase kutubxonasini yuklab bo'lmadi (internet kerak). Qo'ng'iroqlar lokal nusxadan ishlayveradi.",
       accNeedLogin: "Musiqalar kutubxonasini boshqarish uchun tizimga kiring.",
       accEmail: "Email", accPassword: "Parol", accLoginBtn: "Kirish", accLogoutBtn: "Chiqish", accSignedIn: "Kirgan: {email}",
@@ -931,7 +941,7 @@
       weeksForever: "Doimiy", weeksLimited: "{n} hafta · {date} gacha", weeksExpired: "Muddati tugagan ({date})",
       logTitle: "Jurnal", logCount: "bell_scheduler.py dan real vaqtda",
       logEmpty: "Hali hech narsa qayd etilmagan. bell_scheduler.py ishga tushib, birinchi qo'ng'iroq chalinganda shu yerda ko'rinadi.",
-      footer: "server: <code>localhost:3000</code> &middot; fayl: <code>bell_system/config/schedule.json</code>",
+      footer: "Bu kompyuter - <b>qo'ng'iroq kompyuteri</b> (qo'ng'iroqlar shu yerdan chalinadi) &middot; Internet orqali boshqarish: <a href=\"https://ois-school-bell.vercel.app\" target=\"_blank\" rel=\"noopener\">ois-school-bell.vercel.app</a>",
       themeToLight: "Yorug' rejimga o'tish", themeToDark: "Qorong'i rejimga o'tish",
       okAdded: "<b>OK.</b> Yangi qo'ng'iroq ({time}) qo'shildi.",
       okUpdated: "<b>OK.</b> Qo'ng'iroq ({time}) saqlandi.",
@@ -1040,6 +1050,9 @@
       cloudNoSchedule: "Школьный компьютер ещё не отправил расписание - проверьте, что программа на нём запущена",
       cloudConflict: "Расписание только что изменили в другом месте - попробуйте ещё раз",
       cloudLocalOnly: "Эта функция работает только на самом школьном компьютере",
+      bellCopyHint: "Нажмите, чтобы выбрать: Ctrl+C - копировать, Ctrl+V - добавить копию",
+      okBellCopied: "Скопировано: {time} - {label}. Нажмите Ctrl+V - копия откроется в окне редактирования.",
+      okBellPasted: "Копия открыта - измените время (и при необходимости другие поля) и нажмите «Добавить».",
       accNoLib: "Не удалось загрузить библиотеку Supabase (нужен интернет). Звонки продолжат работать с локальных копий.",
       accNeedLogin: "Войдите, чтобы управлять музыкальной библиотекой.",
       accEmail: "Email", accPassword: "Пароль", accLoginBtn: "Войти", accLogoutBtn: "Выйти", accSignedIn: "Вход выполнен: {email}",
@@ -1077,7 +1090,7 @@
       weeksForever: "Постоянно", weeksLimited: "{n} нед. · до {date}", weeksExpired: "Срок истёк ({date})",
       logTitle: "Журнал", logCount: "в реальном времени от bell_scheduler.py",
       logEmpty: "Пока ничего не записано. Как только bell_scheduler.py запустится и прозвучит первый звонок, запись появится здесь.",
-      footer: "сервер: <code>localhost:3000</code> &middot; файл: <code>bell_system/config/schedule.json</code>",
+      footer: "Этот компьютер - <b>компьютер звонков</b> (звонки звучат отсюда) &middot; Управление через интернет: <a href=\"https://ois-school-bell.vercel.app\" target=\"_blank\" rel=\"noopener\">ois-school-bell.vercel.app</a>",
       themeToLight: "Переключить на светлую тему", themeToDark: "Переключить на тёмную тему",
       okAdded: "<b>OK.</b> Новый звонок ({time}) добавлен.",
       okUpdated: "<b>OK.</b> Звонок ({time}) сохранён.",
@@ -1186,6 +1199,9 @@
       cloudNoSchedule: "The school computer has not sent its schedule yet - check that the program is running there",
       cloudConflict: "The schedule was just changed somewhere else - please try again",
       cloudLocalOnly: "This feature works only on the school computer itself",
+      bellCopyHint: "Click to select: Ctrl+C - copy, Ctrl+V - add a copy",
+      okBellCopied: "Copied: {time} - {label}. Press Ctrl+V - the copy opens in the edit window.",
+      okBellPasted: "Copy opened - change the time (and other fields if needed) and press «Add».",
       accNoLib: "Could not load the Supabase library (internet required). Bells keep working from local copies.",
       accNeedLogin: "Sign in to manage the music library.",
       accEmail: "Email", accPassword: "Password", accLoginBtn: "Sign in", accLogoutBtn: "Sign out", accSignedIn: "Signed in: {email}",
@@ -1223,7 +1239,7 @@
       weeksForever: "Ongoing", weeksLimited: "{n} wk · until {date}", weeksExpired: "Expired ({date})",
       logTitle: "Log", logCount: "live from bell_scheduler.py",
       logEmpty: "Nothing has been logged yet. Once bell_scheduler.py is running and the first bell rings, it will show up here.",
-      footer: "server: <code>localhost:3000</code> &middot; file: <code>bell_system/config/schedule.json</code>",
+      footer: "This computer is the <b>bell computer</b> (bells ring from here) &middot; Control over the internet: <a href=\"https://ois-school-bell.vercel.app\" target=\"_blank\" rel=\"noopener\">ois-school-bell.vercel.app</a>",
       themeToLight: "Switch to light mode", themeToDark: "Switch to dark mode",
       okAdded: "<b>OK.</b> New bell ({time}) added.",
       okUpdated: "<b>OK.</b> Bell ({time}) saved.",
@@ -1932,7 +1948,9 @@
     bells.forEach(b=>{
       const expired = isExpired(b, today);
       const row = document.createElement("div");
-      row.className = "bell-row" + (expired ? " expired" : "");
+      row.className = "bell-row selectable" + (expired ? " expired" : "") + (b.id === selectedBellId ? " selected" : "");
+      row.dataset.id = b.id;
+      row.title = t("bellCopyHint");
       const dots = WD_KEYS.map(k=>`<span class="${(b.days||[]).includes(k) ? "on" : ""}">${raw("wdShort")[wdIndex(k)]}</span>`).join("");
       let weeksText;
       if(!b.weeks) weeksText = t("weeksForever");
@@ -1963,9 +1981,92 @@
         busy = false;
         renderAll();
       });
+      // Qatorni bosib tanlash (keyin Ctrl+C - nusxalash)
+      row.addEventListener("click", (e)=>{
+        if(e.target.closest("button")) return;
+        selectBell(b.id);
+      });
       el.appendChild(row);
     });
   }
+
+  // ---------- Qo'ng'iroqni nusxalash / qo'yish (Ctrl+C / Ctrl+V) ----------
+  // Ro'yxatda qatorni bosib tanlang, Ctrl+C - nusxalanadi. Ctrl+V - shu qo'ng'iroq ma'lumotlari bilan
+  // "Yangi qo'ng'iroq" oynasi darhol ochiladi (odatda faqat vaqtni o'zgartirib saqlash kifoya).
+  // Nusxa tizim buferiga yoziladi, shuning uchun lokal paneldan onlayn panelga ham qo'yish mumkin.
+  const BELL_CLIP_TYPE = "ois-school-bell/bell";
+  let selectedBellId = null;
+
+  function selectBell(id){
+    selectedBellId = id;
+    document.querySelectorAll("#bellList .bell-row").forEach(r=>r.classList.toggle("selected", !!id && r.dataset.id === id));
+  }
+  // Matn yozilayotgan joyda yoki oyna ochiq bo'lsa - oddiy Ctrl+C / Ctrl+V ishlaydi
+  function clipboardBusy(){
+    const a = document.activeElement;
+    return !!(a && a.closest && a.closest("input, textarea, select, [contenteditable]")) || !!document.querySelector("dialog[open]");
+  }
+  document.addEventListener("mousedown", (e)=>{
+    if(selectedBellId && !e.target.closest("#bellList .bell-row, dialog, .toast")) selectBell(null);
+  });
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && selectedBellId && !clipboardBusy()) selectBell(null); });
+
+  let copiedBell = null;   // shu oynada oxirgi nusxalangan qo'ng'iroq
+  let pasteFallback = null;
+
+  function selectedBellData(){
+    const b = selectedBellId && getBells().find(x=>x.id === selectedBellId);
+    return b ? {type: BELL_CLIP_TYPE, time: b.time, label: b.label, sound: b.sound,
+                days: b.days || [], rings: b.rings || 1, volume: b.volume || 100, weeks: b.weeks || null} : null;
+  }
+  function openPastedBell(data){
+    if(document.querySelector("dialog[open]")) return;
+    dialogKind = "bell"; applyDialogKind();
+    openBellDialog(null);
+    fillBellForm(data);
+    bellTime.focus();
+    notify("okBellPasted", null, false);
+  }
+
+  document.addEventListener("keydown", (e)=>{
+    if(!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || !authed || clipboardBusy()) return;
+    const k = e.key.toLowerCase();
+    if((k === "c" || e.code === "KeyC") && !String(window.getSelection() || "").trim()){
+      const data = selectedBellData();
+      if(!data) return;
+      copiedBell = data;
+      // Tizim buferiga ham (boshqa oynadagi - masalan onlayn - panelga qo'yish uchun); bo'lmasa - shu oyna ichida ishlaydi
+      try{ navigator.clipboard.writeText(JSON.stringify(data)).catch(()=>{}); }catch(err){ /* bufer yopiq */ }
+      notify("okBellCopied", {time: esc(data.time), label: esc(data.label)}, false);
+    } else if(k === "v" || e.code === "KeyV"){
+      // Avval "paste" hodisasini kutamiz (unda tizim buferidagi nusxa bor); kelmasa - shu oynadagi nusxa
+      clearTimeout(pasteFallback);
+      pasteFallback = setTimeout(()=>{ if(copiedBell) openPastedBell(copiedBell); }, 120);
+    }
+  });
+
+  document.addEventListener("copy", (e)=>{
+    if(clipboardBusy() || String(window.getSelection() || "").trim()) return;
+    const data = selectedBellData();
+    if(!data) return;
+    e.clipboardData.setData("text/plain", JSON.stringify(data));
+    e.preventDefault();
+  });
+
+  document.addEventListener("paste", (e)=>{
+    if(!authed || clipboardBusy()) return;
+    clearTimeout(pasteFallback);
+    const text = e.clipboardData.getData("text/plain");
+    let data = null;
+    try{
+      const o = JSON.parse(text);
+      if(o && o.type === BELL_CLIP_TYPE && typeof o.time === "string") data = o;
+    }catch(err){ /* buferda boshqa narsa */ }
+    if(!data && !text && copiedBell) data = copiedBell;
+    if(!data) return;   // buferda boshqa matn - foydalanuvchi boshqa narsa nusxalagan
+    e.preventDefault();
+    openPastedBell(data);
+  });
 
   // Jurnal qatorlarini bell_scheduler.py yozadi (o'zbekcha) - tarjima qilinmaydi
   let lastLogRows = [];
