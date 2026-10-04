@@ -7,7 +7,7 @@
 ; Yasash: installer\README.md ga qarang (qisqasi: stage_runtime.py, keyin ISCC OIS-School-Bell.iss).
 
 #define AppName "OIS School Bell"
-#define AppVersion "1.1.0"
+#define AppVersion "1.1.1"
 #define AppPublisher "Oxford International School"
 
 ; ---- Maxfiy kalitlar (bell_web\.env) ----

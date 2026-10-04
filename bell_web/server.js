@@ -340,6 +340,47 @@ async function liveStatus() {
   return { playing: !!liveProc, waiting: false, error: liveError };
 }
 
+// ---------- Musiqa bo'limi: kutubxonadagi musiqani bir bosishda maktab karnaylaridan chalish ----------
+// Musiqa dispetcherning "musiqa" qatlamida chalinadi: qo'ng'iroq yoki e'lon paytida o'zi pasayadi.
+// Yangi musiqa qo'yilsa - oldingisi to'xtaydi (navbatda kutmaydi).
+const MUSIC_FILE_RE = /^library\/[0-9a-f-]{36}\.(mp3|wav)$/i;
+const httpErr = (status, message) => Object.assign(new Error(message), { status });
+
+async function musicStatus() {
+  const st = await engineCall("GET", "/status");
+  return st ? { engine: true, current: st.current.music, ducking: !!st.ducking } : { engine: false, current: null };
+}
+
+async function musicPlay(body) {
+  const file = String((body && body.file) || "");
+  if (!MUSIC_FILE_RE.test(file)) throw httpErr(400, "Noto'g'ri musiqa fayli");
+  const item = readLibraryIndex().find((x) => x.file === file);
+  if (!item) throw httpErr(409, "Bu musiqa hali maktab kompyuteriga yuklanmagan - bir daqiqadan keyin qayta urinib ko'ring");
+  const volume = body.volume === undefined || body.volume === null || body.volume === "" ? 80 : Number(body.volume);
+  if (!Number.isInteger(volume) || volume < 1 || volume > 100) throw httpErr(400, "Ovoz balandligi 1 dan 100 gacha bo'lishi kerak");
+  if (!(await engineCall("GET", "/status"))) throw httpErr(503, "Qo'ng'iroq dasturi ishlamayapti - kompyuterni qayta yoqib ko'ring");
+  await engineCall("POST", "/stop", { priority: "music" });
+  const res = await engineCall("POST", "/play", { file, priority: "music", volume, label: `Musiqa: ${item.name}` });
+  if (!res || !res.ok) throw httpErr(503, "Musiqani chalib bo'lmadi (jurnalga qarang)");
+  return waitMusic((s) => s.current && s.current.id === res.id);
+}
+
+async function musicStop() {
+  await engineCall("POST", "/stop", { priority: "music" });
+  return waitMusic((s) => !s.current);
+}
+
+// Dispetcher o'zgarishni bir lahzada qo'llaydi (oldingi ovoz to'xtashi kerak) - panelga eski holat
+// qaytmasligi uchun ko'pi bilan 1.5 soniya kutamiz
+async function waitMusic(done) {
+  for (let i = 0; i < 15; i++) {
+    const s = await musicStatus();
+    if (!s.engine || done(s)) return s;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return musicStatus();
+}
+
 async function stopLive() {
   if (liveEngineId !== null) {
     await engineCall("POST", "/stop", { priority: "announcement" });
@@ -650,6 +691,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, await playLive(wav, volume));
     }
 
+    // ---------- Musiqa bo'limi ----------
+    if (pathname === "/api/music/status" && req.method === "GET") {
+      return sendJson(res, 200, await musicStatus());
+    }
+    if (pathname === "/api/music/play" && req.method === "POST") {
+      return sendJson(res, 200, await musicPlay(await readBody(req)));
+    }
+    if (pathname === "/api/music/stop" && req.method === "POST") {
+      return sendJson(res, 200, await musicStop());
+    }
+
     if (pathname === "/api/ai/stop" && req.method === "POST") {
       return sendJson(res, 200, await stopLive());
     }
@@ -718,6 +770,7 @@ const liveRelay = createLiveRelay({
 if (String(process.env.CLOUD_SYNC || "").toLowerCase() !== "off") {
   cloud = createCloudSync({
     live: liveRelay,
+    musicPlay, musicStop,
     env: () => ({ url: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }),
     schedulePath: SCHEDULE_PATH,
     stateDir: path.join(__dirname, ".cache"),

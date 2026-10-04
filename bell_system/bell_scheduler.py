@@ -256,6 +256,10 @@ def fire_bell(bell, time_str):
         kind_text = {PRI_MUSIC: ", musiqa", PRI_ANNOUNCE: ", e'lon"}.get(priority, "")
         log(f"Signal: {label} ({time_str}, {rings} marta{vol_text}{kind_text}) - {status}")
 
+    if priority == PRI_MUSIC:
+        # Jadvaldagi musiqa vaqti keldi - paneldan qo'lda qo'yilgan musiqa bo'lsa, to'xtatib o'rnini bo'shatamiz
+        # (aks holda u tugashini navbatda kutib qolardi)
+        engine().stop(PRI_MUSIC)
     engine().submit(Item(filepath, priority, volume, rings, label, on_done=done))
 
 

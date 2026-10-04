@@ -126,8 +126,9 @@
   .pulse{animation:pulse 1.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 
-  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
-  .tab{border:none;background:transparent;color:var(--text-dim);font:inherit;font-size:13.5px;font-weight:600;padding:10px 6px;margin-right:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;border:none;background:transparent;color:var(--text-dim);font:inherit;font-size:13.5px;font-weight:600;padding:10px 6px;margin-right:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
   .tab:hover{color:var(--text)}
   .tabpane{display:flex;flex-direction:column;gap:16px}
@@ -390,6 +391,18 @@
   .lib-name{font-weight:600;overflow-wrap:anywhere}
   .lib-meta{font-size:11.5px;color:var(--text-dim);margin-top:2px}
   .lib-actions{display:flex;gap:2px}
+  /* Musiqa bo'limi */
+  .music-row{grid-template-columns:auto 1fr auto}
+  .music-row.on{box-shadow:inset 0 0 0 2px var(--accent)}
+  .music-row .playbtn{white-space:nowrap}
+  .music-now{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:var(--panel-2);font-size:13px}
+  .music-now .mn-ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--text-dim);flex:none}
+  .music-now .mn-ico svg{width:18px;height:18px}
+  .music-now.playing .mn-ico{background:var(--accent);color:#fff}
+  .music-now.playing .mn-ico svg{animation:pulse 1.1s ease-in-out infinite}
+  .music-now .mn-text{flex:1;min-width:0}
+  .music-now .mn-title{font-weight:600;overflow-wrap:anywhere}
+  .music-now .mn-sub{font-size:11.5px;color:var(--text-dim);margin-top:2px}
   .icon-plain{border:none;background:transparent;color:var(--text-dim);cursor:pointer;padding:7px;border-radius:12px;display:flex}
   .icon-plain:hover{background:var(--panel);color:var(--text)}
   .icon-plain.danger:hover{color:var(--crit)}
@@ -532,6 +545,7 @@
 <div class="tabs">
   <button class="tab active" data-tab="today" data-i18n="tabToday"></button>
   <button class="tab" data-tab="bells" data-i18n="tabBells"></button>
+  <button class="tab" data-tab="music" data-i18n="tabMusic"></button>
   <button class="tab" data-tab="calendar" data-i18n="tabCal"></button>
   <button class="tab" data-tab="log" data-i18n="tabLog"></button>
   <button class="tab" data-tab="ai" data-i18n="tabAi"></button>
@@ -549,6 +563,20 @@
   <div class="panel">
     <h2><span data-i18n="allTitle"></span> <span class="count" id="allCount"></span></h2>
     <div class="bell-list" id="bellList"></div>
+  </div>
+</div>
+
+<!-- Musiqa: kutubxonadagi musiqani bir bosishda maktab karnaylaridan chalish -->
+<div class="tabpane" data-pane="music" hidden>
+  <div class="panel">
+    <h2><span data-i18n="musicTitle"></span> <span class="count" id="musicCount"></span></h2>
+    <div class="music-now" id="musicNow"></div>
+    <div class="field">
+      <label for="musicVol" data-i18n="musicVolLabel"></label>
+      <div class="vol-row"><input type="range" id="musicVol" min="10" max="100" step="5" value="80"><span class="mono" id="musicVolVal">80%</span></div>
+    </div>
+    <div class="lib-list" id="musicList"></div>
+    <button type="button" class="link-btn" id="musicLibBtn" data-i18n="musicAddHint"></button>
   </div>
 </div>
 
@@ -977,7 +1005,15 @@
       tlPlaying: "chalinmoqda",
       eyebrowNext: "Keyingi qo'ng'iroq", eyebrowNow: "Hozir chalinmoqda", eyebrowNone: "Qo'ng'iroq yo'q",
       labelEmpty: "Hali qo'ng'iroq qo'shilmagan", labelNoUpcoming: "Yaqin kunlarda qo'ng'iroq yo'q",
-      tabToday: "Bugun", tabBells: "Qo'ng'iroqlar", tabLog: "Jurnal",
+      tabToday: "Bugun", tabBells: "Qo'ng'iroqlar", tabLog: "Jurnal", tabMusic: "Musiqa",
+      musicTitle: "Musiqalar", musicVolLabel: "Maktabda chalish balandligi",
+      musicAddHint: "+ Yangi musiqa qo'shish: Sozlamalar → Musiqalar (turi: «Musiqa»)",
+      musicPreview: "Shu qurilmada eshitib ko'rish", musicPlaySchool: "Maktabda chalish", musicStop: "To'xtatish",
+      musicIdle: "Hozir maktabda musiqa chalinmayapti", musicIdleSub: "Ro'yxatdan musiqani tanlab, «Maktabda chalish» ni bosing",
+      musicOnSchool: "Maktab karnaylaridan chalinmoqda", musicDucked: "Qo'ng'iroq/e'lon paytida pasaytirilgan",
+      musicEngineOff: "Qo'ng'iroq dasturi javob bermayapti (maktab kompyuteri o'chiq bo'lishi mumkin)",
+      musicEmpty: "Hali musiqa yo'q. Sozlamalar → Musiqalar bo'limida fayl yuklang va turini «Musiqa» qiling.",
+      musicStarted: "Maktabda chalinmoqda: {name}", musicStopped: "Musiqa to'xtatildi",
       todayTitle: "Bugungi jadval",
       nBells: "{n} ta qo'ng'iroq",
       noBellsToday: "Bugun uchun qo'ng'iroq belgilanmagan.",
@@ -1143,7 +1179,15 @@
       tlPlaying: "играет",
       eyebrowNext: "Следующий звонок", eyebrowNow: "Звучит сейчас", eyebrowNone: "Звонков нет",
       labelEmpty: "Звонки ещё не добавлены", labelNoUpcoming: "В ближайшие дни звонков нет",
-      tabToday: "Сегодня", tabBells: "Звонки", tabLog: "Журнал",
+      tabToday: "Сегодня", tabBells: "Звонки", tabLog: "Журнал", tabMusic: "Музыка",
+      musicTitle: "Музыка", musicVolLabel: "Громкость в школе",
+      musicAddHint: "+ Добавить музыку: Настройки → Музыка (тип: «Музыка»)",
+      musicPreview: "Прослушать на этом устройстве", musicPlaySchool: "Играть в школе", musicStop: "Остановить",
+      musicIdle: "Сейчас в школе музыка не играет", musicIdleSub: "Выберите музыку и нажмите «Играть в школе»",
+      musicOnSchool: "Звучит из школьных динамиков", musicDucked: "Приглушена на время звонка/объявления",
+      musicEngineOff: "Программа звонков не отвечает (школьный компьютер может быть выключен)",
+      musicEmpty: "Музыки пока нет. Загрузите файл в Настройки → Музыка и выберите тип «Музыка».",
+      musicStarted: "Играет в школе: {name}", musicStopped: "Музыка остановлена",
       todayTitle: "Расписание на сегодня",
       nBells: ["{n} звонок", "{n} звонка", "{n} звонков"],
       noBellsToday: "На сегодня звонки не назначены.",
@@ -1309,7 +1353,15 @@
       tlPlaying: "playing",
       eyebrowNext: "Next bell", eyebrowNow: "Ringing now", eyebrowNone: "No bells",
       labelEmpty: "No bells added yet", labelNoUpcoming: "No bells in the coming days",
-      tabToday: "Today", tabBells: "Bells", tabLog: "Log",
+      tabToday: "Today", tabBells: "Bells", tabLog: "Log", tabMusic: "Music",
+      musicTitle: "Music", musicVolLabel: "Volume at school",
+      musicAddHint: "+ Add music: Settings → Music (type: «Music»)",
+      musicPreview: "Listen on this device", musicPlaySchool: "Play at school", musicStop: "Stop",
+      musicIdle: "No music is playing at school", musicIdleSub: "Pick a track and press «Play at school»",
+      musicOnSchool: "Playing from the school speakers", musicDucked: "Lowered during a bell/announcement",
+      musicEngineOff: "The bell program is not responding (the school computer may be off)",
+      musicEmpty: "No music yet. Upload a file in Settings → Music and set its type to «Music».",
+      musicStarted: "Playing at school: {name}", musicStopped: "Music stopped",
       todayTitle: "Today's schedule",
       nBells: ["{n} bell", "{n} bells"],
       noBellsToday: "No bells are scheduled for today.",
@@ -1833,6 +1885,15 @@
       }
       if(p === "/api/ai/stop") return cloudJson(200, await cloudCommand("ai_stop"));
 
+      // Musiqa bo'limi: holat - maktab kompyuterining oxirgi xabaridan, chalish/to'xtatish - buyruq bilan
+      if(p === "/api/music/status"){
+        const st = await cloudStatus(true);
+        const np = st.now_playing || {};
+        return cloudJson(200, {engine: pcOnline && !!st.scheduler_running, current: pcOnline ? (np.music || null) : null, ducking: !!(np.bell || np.announcement)});
+      }
+      if(p === "/api/music/play") return cloudJson(200, await cloudCommand("music_play", JSON.parse(opts.body || "{}")));
+      if(p === "/api/music/stop") return cloudJson(200, await cloudCommand("music_stop"));
+
       // Ovozni oldindan eshitish: kutubxona fayli Supabase'dan, maktab kompyuteridagi boshqa fayllar - yo'q
       if(p.startsWith("/audios/")){
         const file = decodeURIComponent(p.slice("/audios/".length));
@@ -1921,6 +1982,7 @@
     if(name === "settings") refreshLibraryStatus();
     if(name === "ai" || name === "settings") refreshAiStatus(); // Sozlamalarda "AI kalitlari" holati ko'rinadi
     if(name === "calendar") renderCalendar();
+    if(name === "music"){ renderMusic(); refreshMusicStatus(); }
   }
   tabs.forEach(btn=>{
     btn.addEventListener("click", ()=>activateTab(btn.dataset.tab));
@@ -3465,6 +3527,7 @@
   }
 
   function renderLibrary(){
+    renderMusic(); // musiqa bo'limi ham shu ro'yxatdan (eshitib ko'rish belgisi ham bir xil bo'lsin)
     const signedIn = !!(sb && sbSession);
     libToolbar.hidden = !signedIn;
     libKindSel.innerHTML = kindOptions(libKindSel.value || "music");
@@ -3597,6 +3660,100 @@
     renderLibrary();
     libAudio.play().catch(e=>{ playingId = null; renderLibrary(); notify("errMsg", {msg: esc(e.message)}, true); });
   }
+
+  // ---------- Musiqa bo'limi: kutubxonadagi "Musiqa" turidagi ovozlar ----------
+  // ▶ - shu qurilmada eshitib ko'rish (maktabda emas); "Maktabda chalish" - maktab karnaylaridan darhol.
+  // Maktabda chalinayotgan musiqa qo'ng'iroq yoki e'lon paytida o'zi pasayadi.
+  // (var - renderLibrary() bu bo'lim yuklanishidan oldin chaqirilsa ham xato bermasligi uchun)
+  var musicList = document.getElementById("musicList");
+  var musicNow = document.getElementById("musicNow");
+  var musicCount = document.getElementById("musicCount");
+  var musicVol = document.getElementById("musicVol");
+  var musicVolVal = document.getElementById("musicVolVal");
+  var musicState = null;   // {engine, current: {label, file, ...} | null, ducking}
+  var musicBusy = false;
+  var ICON_SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
+  musicVol.value = String(DEFAULT_VOLUME);
+  musicVolVal.textContent = musicVol.value + "%";
+  musicVol.addEventListener("input", ()=>{ musicVolVal.textContent = musicVol.value + "%"; });
+
+  function renderMusic(){
+    if(!musicList) return;
+    const list = (sounds || []).filter(r=>r.kind === "music");
+    musicCount.textContent = list.length ? t("nFiles", {n: list.length}) : "";
+    const cur = musicState && musicState.current;
+    if(cur){
+      musicNow.className = "music-now playing";
+      musicNow.innerHTML = `<div class="mn-ico">${ICON_SPEAKER}</div>
+        <div class="mn-text"><div class="mn-title">${esc(String(cur.label || "").replace(/^Musiqa: /, ""))}</div>
+        <div class="mn-sub">${esc(t(musicState.ducking ? "musicDucked" : "musicOnSchool"))}</div></div>
+        <button type="button" class="playbtn" data-act="stop" ${musicBusy ? "disabled" : ""}>${esc(t("musicStop"))}</button>`;
+    } else {
+      musicNow.className = "music-now";
+      musicNow.innerHTML = `<div class="mn-ico">${ICON_SPEAKER}</div>
+        <div class="mn-text"><div class="mn-title">${esc(t("musicIdle"))}</div>
+        <div class="mn-sub">${esc(t(musicState && musicState.engine === false ? "musicEngineOff" : "musicIdleSub"))}</div></div>`;
+    }
+    if(!list.length){
+      musicList.innerHTML = `<div class="log-empty">${esc(t(sb && sbSession ? "musicEmpty" : "libNeedLogin"))}</div>`;
+      return;
+    }
+    const curFile = cur && cur.file;
+    musicList.innerHTML = list.map(r=>{
+      const previewing = playingId === r.id;
+      const onSchool = !!curFile && curFile === soundLocalFile(r).split("/").pop();
+      return `<div class="lib-row music-row${onSchool ? " on" : ""}" data-id="${esc(r.id)}">
+        <button type="button" class="lib-play" data-act="preview" title="${esc(t(previewing ? "libStop" : "musicPreview"))}">${previewing ? ICON_STOP : ICON_PLAY}</button>
+        <div><div class="lib-name">${esc(r.name)}</div><div class="lib-meta">${esc(fmtDur(r.duration_seconds) || "")}</div></div>
+        <button type="button" class="playbtn${onSchool ? "" : " primary"}" data-act="${onSchool ? "stop" : "school"}" ${musicBusy ? "disabled" : ""}>${esc(t(onSchool ? "musicStop" : "musicPlaySchool"))}</button>
+      </div>`;
+    }).join("");
+  }
+
+  async function musicCall(url, body){
+    const r = await api(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body || {})});
+    if(!r.ok) throw await apiError(r);
+    return r.json();
+  }
+  async function musicPlayAction(row){
+    if(playingId) stopLibAudio();   // shu qurilmadagi eshitib ko'rishni to'xtatamiz
+    musicBusy = true; renderMusic();
+    try{
+      musicState = await musicCall("/api/music/play", {file: soundLocalFile(row), volume: Number(musicVol.value)});
+      notify("musicStarted", {name: esc(row.name)}, false);
+    }catch(e){ notifyError(e); }
+    musicBusy = false; renderMusic();
+  }
+  async function musicStopAction(){
+    musicBusy = true; renderMusic();
+    try{
+      musicState = await musicCall("/api/music/stop");
+      notify("musicStopped", null, false);
+    }catch(e){ notifyError(e); }
+    musicBusy = false; renderMusic();
+  }
+  async function refreshMusicStatus(){
+    if(!authed || musicBusy) return;
+    try{
+      const r = await api("/api/music/status");
+      if(r.ok){ musicState = await r.json(); renderMusic(); }
+    }catch(e){ /* keyingi safar */ }
+  }
+  musicList.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-act]");
+    if(!btn) return;
+    const row = sounds.find(x=>x.id === btn.closest(".music-row").dataset.id);
+    if(!row) return;
+    if(btn.dataset.act === "preview") playSound(row);
+    else if(btn.dataset.act === "stop") musicStopAction();
+    else if(btn.dataset.act === "school") musicPlayAction(row);
+  });
+  musicNow.addEventListener("click", (e)=>{ if(e.target.closest('button[data-act="stop"]')) musicStopAction(); });
+  document.getElementById("musicLibBtn").addEventListener("click", ()=>activateTab("settings"));
+  // Bo'lim ochiq turganda holat yangilanib turadi (onlayn panelda maktab kompyuteri har 15 s da xabar beradi)
+  setInterval(()=>{
+    if(authed && !document.querySelector('.tabpane[data-pane="music"]').hidden) refreshMusicStatus();
+  }, CLOUD ? 8000 : 3000);
 
   libUploadBtn.addEventListener("click", ()=>libFileInput.click());
   libFileInput.addEventListener("change", ()=>{
